@@ -1,7 +1,35 @@
 import { useEffect, useState } from 'react';
+import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { providerApi } from '../api';
+
+const STATUS_STYLES = {
+  requested: 'bg-gray-100 text-gray-600',
+  assigned: 'bg-amber-100 text-amber-700',
+  accepted: 'bg-blue-100 text-blue-700',
+  declined: 'bg-red-100 text-red-700',
+  on_the_way: 'bg-indigo-100 text-indigo-700',
+  in_progress: 'bg-indigo-100 text-indigo-700',
+  completed: 'bg-brand-100 text-brand-700',
+  cancelled: 'bg-red-100 text-red-700',
+};
+
+// What action buttons make sense given the order's current status.
+const NEXT_ACTIONS = {
+  assigned: [
+    { status: 'accepted', label: 'Accept', icon: CheckCircle2, style: 'brand' },
+    { status: 'declined', label: 'Decline', icon: XCircle, style: 'red' },
+  ],
+  accepted: [{ status: 'on_the_way', label: 'Mark on the way', icon: Truck, style: 'brand' }],
+  on_the_way: [{ status: 'in_progress', label: 'Mark in progress', icon: Wrench, style: 'brand' }],
+  in_progress: [{ status: 'completed', label: 'Mark completed', icon: PackageCheck, style: 'brand' }],
+};
+
+const BUTTON_STYLES = {
+  brand: 'text-brand-700 bg-brand-50 hover:bg-brand-100',
+  red: 'text-red-700 bg-red-50 hover:bg-red-100',
+};
 
 export default function ProviderDashboard() {
   const { user } = useAuth();
@@ -9,6 +37,11 @@ export default function ProviderDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  function loadOrders() {
+    providerApi.myOrders().then((o) => setOrders(o.orders));
+  }
 
   useEffect(() => {
     Promise.all([providerApi.me(), providerApi.myOrders()])
@@ -30,6 +63,18 @@ export default function ProviderDashboard() {
     }
   }
 
+  async function handleOrderAction(orderId, status) {
+    setUpdatingOrderId(orderId);
+    try {
+      await providerApi.setOrderStatus(orderId, status);
+      loadOrders();
+    } catch (err) {
+      alert(err.message || 'Could not update this request');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -46,13 +91,7 @@ export default function ProviderDashboard() {
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-2xl font-bold">Hi, {user.name.split(' ')[0]} 👋</h1>
           <span
-            className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${
-              provider.status === 'verified'
-                ? 'bg-brand-100 text-brand-700'
-                : provider.status === 'pending'
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-red-100 text-red-700'
-            }`}
+            className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${STATUS_STYLES[provider.status] || 'bg-gray-100 text-gray-600'}`}
           >
             {provider.status}
           </span>
@@ -84,16 +123,50 @@ export default function ProviderDashboard() {
         {orders.length === 0 ? (
           <p className="text-sm text-gray-400">No requests assigned yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {orders.map((o) => (
-              <li
-                key={o.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm"
-              >
-                <span className="capitalize font-medium">{o.service_type}</span>
-                <span className="text-gray-500 capitalize">{o.status.replace('_', ' ')}</span>
-              </li>
-            ))}
+          <ul className="space-y-3">
+            {orders.map((o) => {
+              const actions = NEXT_ACTIONS[o.status] || [];
+              return (
+                <li key={o.id} className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="capitalize font-medium text-sm">{o.service_type}</span>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_STYLES[o.status] || 'bg-gray-100 text-gray-600'}`}
+                    >
+                      {o.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-1">
+                    {o.hostel}
+                    {o.block ? `, Block ${o.block}` : ''}
+                    {o.room ? `, Room ${o.room}` : ''}
+                  </p>
+                  {o.details && Object.keys(o.details).length > 0 && (
+                    <p className="text-xs text-gray-400 mb-2">
+                      {Object.entries(o.details)
+                        .filter(([k]) => k !== 'photoUrl')
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(' · ')}
+                    </p>
+                  )}
+
+                  {actions.length > 0 && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {actions.map(({ status, label, icon: Icon, style }) => (
+                        <button
+                          key={status}
+                          onClick={() => handleOrderAction(o.id, status)}
+                          disabled={updatingOrderId === o.id}
+                          className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-60 transition ${BUTTON_STYLES[style]}`}
+                        >
+                          <Icon className="w-3.5 h-3.5" /> {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>
