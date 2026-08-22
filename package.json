@@ -12,6 +12,7 @@
     "start": "node server/index.js",
     "build": "npm install --prefix client && npm run build --prefix client",
     "seed": "node seed.js",
+    "db:push": "node run-schema.js",
     "render-build": "npm install && npm run build"
   },
   "devDependencies": {
