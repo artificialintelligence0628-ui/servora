@@ -69,10 +69,14 @@ servora/
    ```bash
    npm run seed
    ```
-6. **Run in dev** (two terminals):
+6. **Run in dev.** Either one command that runs both:
    ```bash
-   npm run dev              # Express API on :4000
-   npm run dev --prefix client   # Vite dev server on :5173 (proxies /api to :4000)
+   npm run dev:all          # Express API on :4000 + Vite dev server on :5173, together
+   ```
+   ...or two separate terminals if you'd rather see their logs apart:
+   ```bash
+   npm run dev               # Express API on :4000
+   npm run dev:client        # Vite dev server on :5173 (proxies /api to :4000)
    ```
 
 ## Production build (what Render runs)
