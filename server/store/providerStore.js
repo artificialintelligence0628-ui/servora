@@ -1,6 +1,22 @@
 // store/providerStore.js — all SQL related to the providers table.
 import { query } from '../db.js';
 
+// Postgres returns array-of-enum columns as a raw literal string (e.g. "{repairs,water}")
+// rather than a JS array — pg only auto-parses built-in array types, not custom enum arrays.
+// Normalize it here so every caller gets a real array.
+function normalizeProvider(row) {
+  if (!row) return row;
+  if (typeof row.services === 'string') {
+    const inner = row.services.replace(/^{|}$/g, '');
+    row.services = inner.length ? inner.split(',').map((s) => s.replace(/^"|"$/g, '')) : [];
+  }
+  return row;
+}
+
+function normalizeProviders(rows) {
+  return rows.map(normalizeProvider);
+}
+
 export async function createProviderProfile(userId, { services = [], operatingArea } = {}) {
   const { rows } = await query(
     `INSERT INTO providers (user_id, services, operating_area)
@@ -8,17 +24,17 @@ export async function createProviderProfile(userId, { services = [], operatingAr
      RETURNING *`,
     [userId, services, operatingArea ?? null]
   );
-  return rows[0];
+  return normalizeProvider(rows[0]);
 }
 
 export async function findProviderByUserId(userId) {
   const { rows } = await query(`SELECT * FROM providers WHERE user_id = $1`, [userId]);
-  return rows[0] ?? null;
+  return normalizeProvider(rows[0]) ?? null;
 }
 
 export async function findProviderById(id) {
   const { rows } = await query(`SELECT * FROM providers WHERE id = $1`, [id]);
-  return rows[0] ?? null;
+  return normalizeProvider(rows[0]) ?? null;
 }
 
 /** Find available, verified providers offering a given service in an area, for matching. */
@@ -33,7 +49,7 @@ export async function findAvailableProviders({ serviceType, operatingArea }) {
      LIMIT 10`,
     [serviceType, operatingArea ?? null]
   );
-  return rows;
+  return normalizeProviders(rows);
 }
 
 export async function setProviderStatus(providerId, status) {
@@ -41,7 +57,7 @@ export async function setProviderStatus(providerId, status) {
     `UPDATE providers SET status = $2, updated_at = now() WHERE id = $1 RETURNING *`,
     [providerId, status]
   );
-  return rows[0];
+  return normalizeProvider(rows[0]);
 }
 
 export async function setAvailability(providerId, isAvailable) {
@@ -49,7 +65,7 @@ export async function setAvailability(providerId, isAvailable) {
     `UPDATE providers SET is_available = $2, updated_at = now() WHERE id = $1 RETURNING *`,
     [providerId, isAvailable]
   );
-  return rows[0];
+  return normalizeProvider(rows[0]);
 }
 
 export async function updateProviderProfile(providerId, fields) {
@@ -67,7 +83,7 @@ export async function updateProviderProfile(providerId, fields) {
     `UPDATE providers SET ${sets.join(', ')}, updated_at = now() WHERE id = $1 RETURNING *`,
     values
   );
-  return rows[0];
+  return normalizeProvider(rows[0]);
 }
 
 export async function recordRating(providerId, rating) {
@@ -81,7 +97,7 @@ export async function recordRating(providerId, rating) {
      RETURNING *`,
     [providerId, rating]
   );
-  return rows[0];
+  return normalizeProvider(rows[0]);
 }
 
 export async function listProviders({ status } = {}) {
@@ -92,5 +108,5 @@ export async function listProviders({ status } = {}) {
      ORDER BY p.created_at DESC`,
     [status ?? null]
   );
-  return rows;
+  return normalizeProviders(rows);
 }
