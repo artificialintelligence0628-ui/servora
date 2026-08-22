@@ -86,6 +86,20 @@ router.get('/:orderId', requireAuth, async (req, res) => {
   res.json({ order });
 });
 
+// ---- Student cancels their own request, while it's still early enough to cancel ----
+router.post('/:orderId/cancel', requireAuth, requireRole('student'), async (req, res) => {
+  const order = await findOrderById(req.params.orderId);
+  if (!order || order.student_id !== req.user.id) return res.status(404).json({ error: 'Order not found' });
+
+  const cancellable = ['requested', 'assigned', 'accepted', 'on_the_way'];
+  if (!cancellable.includes(order.status)) {
+    return res.status(400).json({ error: `Can't cancel a request that's already ${order.status}` });
+  }
+
+  const updated = await setOrderStatus(order.id, 'cancelled');
+  res.json({ order: updated });
+});
+
 // ---- In-app messaging, scoped to the student/provider/admin on this order ----
 router.get('/:orderId/messages', requireAuth, async (req, res) => {
   const order = await findOrderById(req.params.orderId);

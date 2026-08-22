@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import ChatThread from '../components/ChatThread';
 import { orderApi, paymentApi, supportApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
+import { useAuth } from '../context/AuthContext';
 
 const STEPS = ['requested', 'assigned', 'accepted', 'on_the_way', 'in_progress', 'completed'];
 const STEP_LABELS = {
@@ -18,9 +19,11 @@ const STEP_LABELS = {
 
 export default function OrderTracking() {
   const { orderId } = useParams();
+  const { user } = useAuth();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +81,9 @@ export default function OrderTracking() {
   const needsPayment =
     order.price_amount &&
     !['in_progress', 'completed', 'declined', 'cancelled'].includes(order.status);
+  const canCancel =
+    order.student_id === user.id &&
+    ['requested', 'assigned', 'accepted', 'on_the_way'].includes(order.status);
 
   async function handlePay() {
     setPaying(true);
@@ -87,6 +93,19 @@ export default function OrderTracking() {
     } catch (err) {
       alert(err.message || 'Could not start payment');
       setPaying(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!confirm('Cancel this request? This can\'t be undone.')) return;
+    setCancelling(true);
+    try {
+      await orderApi.cancel(order.id);
+      refetch();
+    } catch (err) {
+      alert(err.message || 'Could not cancel this request');
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -138,6 +157,16 @@ export default function OrderTracking() {
                 );
               })}
             </ol>
+          )}
+
+          {canCancel && (
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="mb-8 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+            >
+              {cancelling ? 'Cancelling…' : 'Cancel this request'}
+            </button>
           )}
 
           {order.price_amount && (

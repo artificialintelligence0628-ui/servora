@@ -21,6 +21,15 @@ export async function assignProvider(orderId, providerId) {
   return rows[0];
 }
 
+/** Clear the assigned provider and reset to 'requested' so it can be matched again later. */
+export async function unassignProvider(orderId) {
+  const { rows } = await query(
+    `UPDATE orders SET provider_id = NULL, status = 'requested', updated_at = now() WHERE id = $1 RETURNING *`,
+    [orderId]
+  );
+  return rows[0];
+}
+
 export async function setOrderStatus(orderId, status) {
   const { rows } = await query(
     `UPDATE orders SET status = $2, updated_at = now() WHERE id = $1 RETURNING *`,

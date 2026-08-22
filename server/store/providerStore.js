@@ -38,16 +38,17 @@ export async function findProviderById(id) {
 }
 
 /** Find available, verified providers offering a given service in an area, for matching. */
-export async function findAvailableProviders({ serviceType, operatingArea }) {
+export async function findAvailableProviders({ serviceType, operatingArea, excludeProviderId }) {
   const { rows } = await query(
     `SELECT * FROM providers
      WHERE status = 'verified'
        AND is_available = TRUE
        AND $1 = ANY(services)
        AND ($2::text IS NULL OR operating_area ILIKE '%' || $2 || '%')
+       AND ($3::uuid IS NULL OR id <> $3)
      ORDER BY rating_avg DESC
      LIMIT 10`,
-    [serviceType, operatingArea ?? null]
+    [serviceType, operatingArea ?? null, excludeProviderId ?? null]
   );
   return normalizeProviders(rows);
 }

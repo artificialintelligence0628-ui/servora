@@ -106,6 +106,7 @@ export const orderApi = {
     request(`/orders/${orderId}/price`, { method: 'POST', body: { priceAmount, commissionRatePercent } }),
   review: (orderId, rating, comment) =>
     request(`/orders/${orderId}/review`, { method: 'POST', body: { rating, comment } }),
+  cancel: (orderId) => request(`/orders/${orderId}/cancel`, { method: 'POST' }),
 };
 
 // ---------------------------------------------------------------------
