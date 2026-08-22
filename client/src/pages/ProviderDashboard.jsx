@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
-import { providerApi } from '../api';
+import { providerApi, orderApi } from '../api';
 
 const STATUS_STYLES = {
   requested: 'bg-gray-100 text-gray-600',
@@ -150,6 +150,20 @@ export default function ProviderDashboard() {
                     </p>
                   )}
 
+                  {o.status === 'accepted' && !o.price_amount && (
+                    <PriceQuoteForm
+                      orderId={o.id}
+                      commissionRate={provider.commission_rate}
+                      onQuoted={loadOrders}
+                    />
+                  )}
+                  {o.price_amount && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      Quoted GH₵{Number(o.price_amount).toFixed(2)} · you'll receive GH₵
+                      {Number(o.provider_payout).toFixed(2)} after commission
+                    </p>
+                  )}
+
                   {actions.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">
                       {actions.map(({ status, label, icon: Icon, style }) => (
@@ -171,5 +185,47 @@ export default function ProviderDashboard() {
         )}
       </main>
     </div>
+  );
+}
+
+function PriceQuoteForm({ orderId, commissionRate, onQuoted }) {
+  const [price, setPrice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!price || Number(price) <= 0) return;
+    setSubmitting(true);
+    try {
+      await orderApi.setPrice(orderId, Number(price));
+      onQuoted();
+    } catch (err) {
+      alert(err.message || 'Could not submit your quote');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-2">
+      <input
+        type="number"
+        min="1"
+        step="0.01"
+        required
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        placeholder="Your price (GH₵)"
+        className="w-36 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+      />
+      <button
+        type="submit"
+        disabled={submitting}
+        className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 px-3 py-1.5 rounded-lg transition"
+      >
+        Send quote
+      </button>
+      <span className="text-xs text-gray-400">{commissionRate}% commission applies</span>
+    </form>
   );
 }

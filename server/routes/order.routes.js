@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   createOrder, findOrderById, listOrdersForStudent, assignProvider, setPricing,
 } from '../store/orderStore.js';
-import { findAvailableProviders, findProviderById, recordRating } from '../store/providerStore.js';
+import { findAvailableProviders, findProviderById, findProviderByUserId, recordRating } from '../store/providerStore.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadBuffer } from '../utils/cloudinary.js';
@@ -78,16 +78,34 @@ router.get('/:orderId', requireAuth, async (req, res) => {
   res.json({ order });
 });
 
-// ---- Admin/staff sets pricing once magnitude of work is confirmed ----
-router.post('/:orderId/price', requireAuth, requireRole('admin'), async (req, res) => {
-  const { priceAmount, commissionRatePercent = 10 } = req.body;
-  if (!priceAmount) return res.status(400).json({ error: 'priceAmount is required' });
+// ---- Set pricing. Providers quote their own job using their own commission
+// rate (can't be overridden client-side); admins can set/override any price. ----
+router.post('/:orderId/price', requireAuth, requireRole('admin', 'provider'), async (req, res) => {
+  const { priceAmount } = req.body;
+  if (!priceAmount || priceAmount <= 0) return res.status(400).json({ error: 'priceAmount is required' });
+
+  const order = await findOrderById(req.params.orderId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  let commissionRatePercent;
+
+  if (req.user.role === 'provider') {
+    const provider = await findProviderByUserId(req.user.id);
+    if (!provider || order.provider_id !== provider.id) {
+      return res.status(403).json({ error: 'You are not assigned to this order' });
+    }
+    // Providers use their own agreed commission rate — not client-supplied, to prevent tampering.
+    commissionRatePercent = Number(provider.commission_rate);
+  } else {
+    // Admin can specify a rate, defaulting to 10% if not given.
+    commissionRatePercent = req.body.commissionRatePercent ?? 10;
+  }
 
   const commissionAmount = Number((priceAmount * (commissionRatePercent / 100)).toFixed(2));
   const providerPayout = Number((priceAmount - commissionAmount).toFixed(2));
 
-  const order = await setPricing(req.params.orderId, { priceAmount, commissionAmount, providerPayout });
-  res.json({ order });
+  const updated = await setPricing(req.params.orderId, { priceAmount, commissionAmount, providerPayout });
+  res.json({ order: updated });
 });
 
 // ---- Review a completed order (student) ----
