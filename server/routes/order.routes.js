@@ -43,7 +43,10 @@ router.post('/', requireAuth, requireRole('student'), upload.single('photo'), as
     });
 
     // Attempt an immediate match against available providers in the area.
-    const candidates = await findAvailableProviders({ serviceType, operatingArea: hostel || university });
+    // Match on the broader university/campus area first, since providers typically
+    // register a wide operating area (e.g. a whole university) rather than a single
+    // hostel — matching against the narrower hostel text would rarely find them.
+    const candidates = await findAvailableProviders({ serviceType, operatingArea: university || hostel });
     if (candidates.length > 0) {
       await assignProvider(order.id, candidates[0].id);
     }
