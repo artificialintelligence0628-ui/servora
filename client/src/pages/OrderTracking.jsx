@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle2, Circle, ArrowLeft, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowLeft, Loader2, Star } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { orderApi, paymentApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
@@ -42,6 +42,10 @@ export default function OrderTracking() {
       clearInterval(interval);
     };
   }, [orderId]);
+
+  function refetch() {
+    orderApi.get(orderId).then((d) => setOrder(d.order));
+  }
 
   if (error) {
     return (
@@ -154,6 +158,18 @@ export default function OrderTracking() {
             </div>
           )}
 
+          {order.status === 'completed' && order.provider_id && (
+            <div className="mb-8">
+              {order.has_review ? (
+                <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                  Thanks — you've already rated this request.
+                </p>
+              ) : (
+                <ReviewForm orderId={order.id} onSubmitted={refetch} />
+              )}
+            </div>
+          )}
+
           <details className="text-sm text-gray-500">
             <summary className="cursor-pointer font-medium text-gray-700">Request details</summary>
             <ul className="mt-2 space-y-1">
@@ -167,5 +183,71 @@ export default function OrderTracking() {
         </div>
       </main>
     </div>
+  );
+}
+
+function ReviewForm({ orderId, onSubmitted }) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (rating === 0) {
+      setError('Pick a star rating first.');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      await orderApi.review(orderId, rating, comment || undefined);
+      onSubmitted();
+    } catch (err) {
+      setError(err.message || 'Could not submit your review');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white px-4 py-4">
+      <p className="text-sm font-medium text-gray-700 mb-2">How was this service?</p>
+      <div className="flex items-center gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setRating(n)}
+            onMouseEnter={() => setHoverRating(n)}
+            onMouseLeave={() => setHoverRating(0)}
+            className="p-0.5"
+          >
+            <Star
+              className={`w-6 h-6 transition ${
+                n <= (hoverRating || rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Anything you'd like to add? (optional)"
+        rows={2}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      />
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+      >
+        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+        Submit review
+      </button>
+    </form>
   );
 }

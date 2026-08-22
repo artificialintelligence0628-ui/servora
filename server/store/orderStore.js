@@ -40,7 +40,11 @@ export async function setPricing(orderId, { priceAmount, commissionAmount, provi
 }
 
 export async function findOrderById(orderId) {
-  const { rows } = await query(`SELECT * FROM orders WHERE id = $1`, [orderId]);
+  const { rows } = await query(
+    `SELECT o.*, EXISTS(SELECT 1 FROM reviews r WHERE r.order_id = o.id) AS has_review
+     FROM orders o WHERE o.id = $1`,
+    [orderId]
+  );
   return rows[0] ?? null;
 }
 

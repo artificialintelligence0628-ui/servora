@@ -118,12 +118,19 @@ router.post('/:orderId/review', requireAuth, requireRole('student'), async (req,
   if (order.status !== 'completed') return res.status(400).json({ error: 'Order is not completed yet' });
   if (!order.provider_id) return res.status(400).json({ error: 'Order has no provider to review' });
 
-  await query(
+  const { rows } = await query(
     `INSERT INTO reviews (order_id, provider_id, student_id, rating, comment)
      VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (order_id) DO NOTHING`,
+     ON CONFLICT (order_id) DO NOTHING
+     RETURNING id`,
     [order.id, order.provider_id, req.user.id, rating, comment ?? null]
   );
+
+  // ON CONFLICT means this order was already reviewed — don't double-count the rating.
+  if (rows.length === 0) {
+    return res.status(409).json({ error: 'This order has already been reviewed' });
+  }
+
   const provider = await recordRating(order.provider_id, rating);
   res.status(201).json({ provider });
 });
