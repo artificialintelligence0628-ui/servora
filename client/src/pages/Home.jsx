@@ -1,0 +1,58 @@
+import { useEffect, useState } from 'react';
+import { Droplets, Shirt, Flame, Wrench } from 'lucide-react';
+import { healthApi } from '../api';
+
+const SERVICES = [
+  { key: 'water', label: 'Water', icon: Droplets },
+  { key: 'laundry', label: 'Laundry', icon: Shirt },
+  { key: 'gas', label: 'Gas', icon: Flame },
+  { key: 'repairs', label: 'Repairs', icon: Wrench },
+];
+
+export default function Home() {
+  const [apiStatus, setApiStatus] = useState('checking...');
+
+  useEffect(() => {
+    healthApi
+      .check()
+      .then((d) => setApiStatus(d.db === 'connected' ? 'connected' : 'db unreachable'))
+      .catch(() => setApiStatus('unreachable'));
+  }, []);
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <span className="font-bold text-lg text-brand-700">SERVORA</span>
+        <span className="text-xs text-gray-400">API: {apiStatus}</span>
+      </header>
+
+      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <p className="uppercase tracking-widest text-brand-600 text-xs font-semibold mb-2">
+          Service Made Simple
+        </p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 max-w-xl">
+          Your everyday services, delivered to you.
+        </h1>
+        <p className="text-gray-500 max-w-md mb-10">
+          Water, laundry, gas, and repairs — one request away.
+        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl w-full">
+          {SERVICES.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition"
+            >
+              <Icon className="w-6 h-6 text-brand-600" />
+              <span className="text-sm font-medium">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <button className="mt-10 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-lg transition">
+          Request a Service
+        </button>
+      </main>
+    </div>
+  );
+}

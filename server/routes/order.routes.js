@@ -1,0 +1,104 @@
+import { Router } from 'express';
+import {
+  createOrder, findOrderById, listOrdersForStudent, assignProvider, setPricing,
+} from '../store/orderStore.js';
+import { findAvailableProviders, findProviderById, recordRating } from '../store/providerStore.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
+import { uploadBuffer } from '../utils/cloudinary.js';
+import { query } from '../db.js';
+
+const router = Router();
+
+// ---- Create a request (student). Photo upload is optional (used by Repairs). ----
+router.post('/', requireAuth, requireRole('student'), upload.single('photo'), async (req, res) => {
+  try {
+    const { serviceType, details, university, hostel, block, room, preferredTime } = req.body;
+    if (!serviceType) return res.status(400).json({ error: 'serviceType is required' });
+
+    let parsedDetails = {};
+    try {
+      parsedDetails = details ? JSON.parse(details) : {};
+    } catch {
+      parsedDetails = {};
+    }
+
+    if (req.file) {
+      const { url } = await uploadBuffer(req.file.buffer, { folder: 'servora/orders' });
+      parsedDetails.photoUrl = url;
+    }
+
+    const order = await createOrder({
+      studentId: req.user.id,
+      serviceType,
+      details: parsedDetails,
+      university, hostel, block, room,
+      preferredTime: preferredTime || null,
+    });
+
+    // Attempt an immediate match against available providers in the area.
+    const candidates = await findAvailableProviders({ serviceType, operatingArea: hostel || university });
+    if (candidates.length > 0) {
+      await assignProvider(order.id, candidates[0].id);
+    }
+
+    const fresh = await findOrderById(order.id);
+    res.status(201).json({ order: fresh, matched: candidates.length > 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not create request' });
+  }
+});
+
+// ---- Track / list own requests (student) ----
+router.get('/mine', requireAuth, requireRole('student'), async (req, res) => {
+  const orders = await listOrdersForStudent(req.user.id);
+  res.json({ orders });
+});
+
+router.get('/:orderId', requireAuth, async (req, res) => {
+  const order = await findOrderById(req.params.orderId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const isOwner = order.student_id === req.user.id;
+  const isAdmin = req.user.role === 'admin';
+  const provider = order.provider_id ? await findProviderById(order.provider_id) : null;
+  const isAssignedProvider = provider && provider.user_id === req.user.id;
+
+  if (!isOwner && !isAdmin && !isAssignedProvider) return res.status(403).json({ error: 'Forbidden' });
+  res.json({ order });
+});
+
+// ---- Admin/staff sets pricing once magnitude of work is confirmed ----
+router.post('/:orderId/price', requireAuth, requireRole('admin'), async (req, res) => {
+  const { priceAmount, commissionRatePercent = 10 } = req.body;
+  if (!priceAmount) return res.status(400).json({ error: 'priceAmount is required' });
+
+  const commissionAmount = Number((priceAmount * (commissionRatePercent / 100)).toFixed(2));
+  const providerPayout = Number((priceAmount - commissionAmount).toFixed(2));
+
+  const order = await setPricing(req.params.orderId, { priceAmount, commissionAmount, providerPayout });
+  res.json({ order });
+});
+
+// ---- Review a completed order (student) ----
+router.post('/:orderId/review', requireAuth, requireRole('student'), async (req, res) => {
+  const { rating, comment } = req.body;
+  if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'rating must be 1-5' });
+
+  const order = await findOrderById(req.params.orderId);
+  if (!order || order.student_id !== req.user.id) return res.status(404).json({ error: 'Order not found' });
+  if (order.status !== 'completed') return res.status(400).json({ error: 'Order is not completed yet' });
+  if (!order.provider_id) return res.status(400).json({ error: 'Order has no provider to review' });
+
+  await query(
+    `INSERT INTO reviews (order_id, provider_id, student_id, rating, comment)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (order_id) DO NOTHING`,
+    [order.id, order.provider_id, req.user.id, rating, comment ?? null]
+  );
+  const provider = await recordRating(order.provider_id, rating);
+  res.status(201).json({ provider });
+});
+
+export default router;

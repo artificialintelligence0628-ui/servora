@@ -1,0 +1,29 @@
+{
+  "name": "servora-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servora - University service marketplace (Water, Laundry, Gas, Repairs). Express API + built React client served as one Render web service.",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "node --watch server/index.js",
+    "start": "node server/index.js",
+    "build": "npm install --prefix client && npm run build --prefix client",
+    "seed": "node seed.js",
+    "render-build": "npm install && npm run build"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "pg": "^8.13.1",
+    "resend": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}

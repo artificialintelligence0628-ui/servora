@@ -1,0 +1,69 @@
+import { Router } from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { listProviders, setProviderStatus } from '../store/providerStore.js';
+import { listAllOrders, getRevenueSummary } from '../store/orderStore.js';
+import { listUsersByRole } from '../store/userStore.js';
+import { query } from '../db.js';
+
+const router = Router();
+router.use(requireAuth, requireRole('admin'));
+
+router.get('/overview', async (req, res) => {
+  const [revenue, orders, providers, students] = await Promise.all([
+    getRevenueSummary(),
+    listAllOrders(),
+    listProviders(),
+    listUsersByRole('student'),
+  ]);
+  res.json({
+    revenue,
+    orderCount: orders.length,
+    providerCount: providers.length,
+    studentCount: students.length,
+  });
+});
+
+router.get('/orders', async (req, res) => {
+  const orders = await listAllOrders({ status: req.query.status });
+  res.json({ orders });
+});
+
+router.get('/providers', async (req, res) => {
+  const providers = await listProviders({ status: req.query.status });
+  res.json({ providers });
+});
+
+router.post('/providers/:providerId/status', async (req, res) => {
+  const { status } = req.body; // pending | verified | suspended
+  if (!['pending', 'verified', 'suspended'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  const provider = await setProviderStatus(req.params.providerId, status);
+  res.json({ provider });
+});
+
+router.get('/students', async (req, res) => {
+  const students = await listUsersByRole('student');
+  res.json({ students });
+});
+
+router.get('/support-tickets', async (req, res) => {
+  const { rows } = await query(
+    `SELECT * FROM support_tickets ORDER BY created_at DESC`
+  );
+  res.json({ tickets: rows });
+});
+
+router.post('/support-tickets/:ticketId/status', async (req, res) => {
+  const { status } = req.body; // open | in_review | resolved
+  if (!['open', 'in_review', 'resolved'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  const { rows } = await query(
+    `UPDATE support_tickets SET status = $2 WHERE id = $1 RETURNING *`,
+    [req.params.ticketId, status]
+  );
+  res.json({ ticket: rows[0] });
+});
+
+export default router;
