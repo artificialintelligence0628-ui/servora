@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Clock } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { adminApi } from '../api';
+import { adminApi, orderApi } from '../api';
 
 const STATUS_STYLES = {
   verified: 'bg-brand-100 text-brand-700',
@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [providers, setProviders] = useState([]);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [unpricedOrders, setUnpricedOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   function loadOverview() {
     adminApi.overview().then(setOverview).catch(() => setOverview(null));
@@ -28,9 +30,25 @@ export default function AdminDashboard() {
       .finally(() => setLoadingProviders(false));
   }
 
+  function loadOrders() {
+    setLoadingOrders(true);
+    adminApi
+      .orders()
+      .then((d) =>
+        setUnpricedOrders(
+          d.orders.filter(
+            (o) => !o.price_amount && !['declined', 'cancelled'].includes(o.status)
+          )
+        )
+      )
+      .catch(() => setUnpricedOrders([]))
+      .finally(() => setLoadingOrders(false));
+  }
+
   useEffect(() => {
     loadOverview();
     loadProviders();
+    loadOrders();
   }, []);
 
   async function handleStatusChange(providerId, status) {
@@ -61,6 +79,19 @@ export default function AdminDashboard() {
             <Stat label="Students" value={overview.studentCount} />
             <Stat label="Commission (GH₵)" value={overview.revenue?.total_commission ?? 0} />
           </div>
+        )}
+
+        <h2 className="text-lg font-semibold mb-3">Orders needing a price</h2>
+        {loadingOrders ? (
+          <p className="text-sm text-gray-400 mb-10">Loading…</p>
+        ) : unpricedOrders.length === 0 ? (
+          <p className="text-sm text-gray-400 mb-10">Nothing waiting on a price right now.</p>
+        ) : (
+          <ul className="space-y-2 mb-10">
+            {unpricedOrders.map((o) => (
+              <PricingRow key={o.id} order={o} onPriced={loadOrders} />
+            ))}
+          </ul>
         )}
 
         <h2 className="text-lg font-semibold mb-3">Providers</h2>
@@ -134,5 +165,67 @@ function Stat({ label, value }) {
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
     </div>
+  );
+}
+
+function PricingRow({ order, onPriced }) {
+  const [price, setPrice] = useState('');
+  const [commission, setCommission] = useState('10');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSetPrice(e) {
+    e.preventDefault();
+    if (!price || Number(price) <= 0) return;
+    setSubmitting(true);
+    try {
+      await orderApi.setPrice(order.id, Number(price), Number(commission));
+      onPriced();
+    } catch (err) {
+      alert(err.message || 'Could not set price');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <li className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="capitalize font-medium text-sm">{order.service_type}</span>
+        <span className="text-xs text-gray-500 capitalize">{order.status.replace('_', ' ')}</span>
+      </div>
+      <p className="text-xs text-gray-500 mb-3">
+        {order.hostel}
+        {order.block ? `, Block ${order.block}` : ''}
+        {order.room ? `, Room ${order.room}` : ''}
+      </p>
+      <form onSubmit={handleSetPrice} className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          step="0.01"
+          required
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Price (GH₵)"
+          className="w-32 rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={commission}
+          onChange={(e) => setCommission(e.target.value)}
+          placeholder="Commission %"
+          className="w-28 rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 px-3 py-1.5 rounded-lg transition"
+        >
+          Set price
+        </button>
+      </form>
+    </li>
   );
 }

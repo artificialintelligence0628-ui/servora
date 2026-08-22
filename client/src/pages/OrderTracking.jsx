@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle2, Circle, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowLeft, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { orderApi } from '../api';
+import { orderApi, paymentApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
 
 const STEPS = ['requested', 'assigned', 'accepted', 'on_the_way', 'in_progress', 'completed'];
@@ -19,6 +19,7 @@ export default function OrderTracking() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +70,20 @@ export default function OrderTracking() {
   const currentIndex = STEPS.indexOf(order.status);
   const config = SERVICE_CONFIG[order.service_type];
   const Icon = config?.icon;
+  const needsPayment =
+    order.price_amount &&
+    !['in_progress', 'completed', 'declined', 'cancelled'].includes(order.status);
+
+  async function handlePay() {
+    setPaying(true);
+    try {
+      const { authorizationUrl } = await paymentApi.initialize(order.id);
+      window.location.href = authorizationUrl;
+    } catch (err) {
+      alert(err.message || 'Could not start payment');
+      setPaying(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -122,10 +137,20 @@ export default function OrderTracking() {
 
           {order.price_amount && (
             <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm mb-8">
-              <div className="flex justify-between">
+              <div className="flex justify-between mb-3">
                 <span className="text-gray-500">Total</span>
                 <span className="font-semibold">GH₵{Number(order.price_amount).toFixed(2)}</span>
               </div>
+              {needsPayment && (
+                <button
+                  onClick={handlePay}
+                  disabled={paying}
+                  className="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-2 rounded-lg transition text-sm"
+                >
+                  {paying && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Pay now
+                </button>
+              )}
             </div>
           )}
 

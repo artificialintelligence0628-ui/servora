@@ -9,6 +9,7 @@ import ProviderDashboard from './pages/ProviderDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import RequestService from './pages/RequestService.jsx';
 import OrderTracking from './pages/OrderTracking.jsx';
+import PaymentCallback from './pages/PaymentCallback.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 export default function App() {
@@ -41,6 +42,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <OrderTracking />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payment/callback"
+        element={
+          <ProtectedRoute>
+            <PaymentCallback />
           </ProtectedRoute>
         }
       />

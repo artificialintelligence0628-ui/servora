@@ -13,11 +13,11 @@ function authHeaders() {
 }
 
 /** Initialize a transaction server-side (optional alternative to inline popup). */
-export async function initializeTransaction({ email, amountKobo, reference, metadata }) {
+export async function initializeTransaction({ email, amountKobo, reference, metadata, callbackUrl }) {
   const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ email, amount: amountKobo, reference, metadata }),
+    body: JSON.stringify({ email, amount: amountKobo, reference, metadata, callback_url: callbackUrl }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Paystack initialize failed');

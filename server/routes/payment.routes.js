@@ -21,6 +21,7 @@ router.post('/initialize', requireAuth, requireRole('student'), async (req, res)
       amountKobo: Math.round(Number(order.price_amount) * 100),
       reference,
       metadata: { orderId: order.id },
+      callbackUrl: `${process.env.CLIENT_ORIGIN}/payment/callback`,
     });
 
     await query(
