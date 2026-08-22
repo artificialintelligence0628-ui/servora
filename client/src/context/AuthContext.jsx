@@ -26,6 +26,17 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     loadUser();
+
+    // Every tab shares the same localStorage token. If the person logs in/out
+    // as a different account in another tab, sync this tab's session too,
+    // instead of silently going stale and failing role checks on the next request.
+    function handleStorageChange(e) {
+      if (e.key === 'servora_token') {
+        loadUser();
+      }
+    }
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [loadUser]);
 
   async function login(email, password) {
