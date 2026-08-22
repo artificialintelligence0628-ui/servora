@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck, Upload, FileCheck, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ChatThread from '../components/ChatThread';
 import { useAuth } from '../context/AuthContext';
@@ -107,6 +107,8 @@ export default function ProviderDashboard() {
             start receiving requests.
           </div>
         )}
+
+        <IdDocumentUpload provider={provider} onUploaded={setProvider} />
 
         <button
           onClick={toggleAvailability}
@@ -230,5 +232,63 @@ function PriceQuoteForm({ orderId, commissionRate, onQuoted }) {
       </button>
       <span className="text-xs text-gray-400">{commissionRate}% commission applies</span>
     </form>
+  );
+}
+
+function IdDocumentUpload({ provider, onUploaded }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploading(true);
+    try {
+      const { provider: updated } = await providerApi.uploadIdDocument(file);
+      onUploaded(updated);
+    } catch (err) {
+      setError(err.message || 'Could not upload document');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-lg border border-gray-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-700">Identity verification</p>
+          {provider.id_document_url ? (
+            <a
+              href={provider.id_document_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mt-0.5"
+            >
+              <FileCheck className="w-3.5 h-3.5" /> View uploaded document
+            </a>
+          ) : (
+            <p className="text-xs text-gray-500 mt-0.5">
+              Upload an ID or business document so an admin can verify your account.
+            </p>
+          )}
+        </div>
+
+        <label className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg cursor-pointer transition">
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          {provider.id_document_url ? 'Replace' : 'Upload'}
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileChange}
+            disabled={uploading}
+            className="hidden"
+          />
+        </label>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
   );
 }

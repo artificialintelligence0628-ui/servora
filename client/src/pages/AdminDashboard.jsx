@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Clock, Eye, CircleCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Eye, CircleCheck, FileCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { adminApi, orderApi } from '../api';
 
@@ -160,6 +160,18 @@ export default function AdminDashboard() {
                     {p.email} · {p.services?.join(', ') || 'no services set'} ·{' '}
                     {p.operating_area || 'no area set'}
                   </p>
+                  {p.id_document_url ? (
+                    <a
+                      href={p.id_document_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mt-0.5"
+                    >
+                      <FileCheck className="w-3 h-3" /> View ID document
+                    </a>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-0.5">No document uploaded yet</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
