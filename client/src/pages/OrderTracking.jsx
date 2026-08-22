@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle2, Circle, ArrowLeft, Loader2, Star } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowLeft, Loader2, Star, LifeBuoy } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { orderApi, paymentApi } from '../api';
+import { orderApi, paymentApi, supportApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
 
 const STEPS = ['requested', 'assigned', 'accepted', 'on_the_way', 'in_progress', 'completed'];
@@ -170,7 +170,9 @@ export default function OrderTracking() {
             </div>
           )}
 
-          <details className="text-sm text-gray-500">
+          {!isDeclinedOrCancelled && <SupportSection orderId={order.id} />}
+
+          <details className="text-sm text-gray-500 mt-8">
             <summary className="cursor-pointer font-medium text-gray-700">Request details</summary>
             <ul className="mt-2 space-y-1">
               {Object.entries(order.details || {}).map(([key, val]) => (
@@ -183,6 +185,107 @@ export default function OrderTracking() {
         </div>
       </main>
     </div>
+  );
+}
+
+const TICKET_CATEGORIES = [
+  { value: 'provider_no_show', label: 'Provider didn\u2019t arrive' },
+  { value: 'wrong_order', label: 'Wrong order' },
+  { value: 'damaged_items', label: 'Damaged clothes/items' },
+  { value: 'poor_repair', label: 'Poor repair quality' },
+  { value: 'payment_problem', label: 'Payment problem' },
+  { value: 'refund_issue', label: 'Refund issue' },
+  { value: 'other', label: 'Something else' },
+];
+
+function SupportSection({ orderId }) {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!category || !message.trim()) {
+      setError('Please pick a category and describe what happened.');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      await supportApi.create({ orderId, category, message });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || 'Could not submit your report');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+        Thanks — we've received your report and will follow up soon.
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-4"
+      >
+        <LifeBuoy className="w-4 h-4" /> Need help with this request?
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white px-4 py-4 mb-4">
+      <p className="text-sm font-medium text-gray-700 mb-2">What went wrong?</p>
+      <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+      >
+        <option value="" disabled>
+          Select a category…
+        </option>
+        {TICKET_CATEGORIES.map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Tell us what happened…"
+        rows={3}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      />
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+        >
+          {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+          Submit report
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-sm text-gray-500 hover:text-gray-700 px-2"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 

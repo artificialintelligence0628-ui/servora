@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Eye, CircleCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { adminApi, orderApi } from '../api';
 
@@ -9,6 +9,22 @@ const STATUS_STYLES = {
   suspended: 'bg-red-100 text-red-700',
 };
 
+const TICKET_STATUS_STYLES = {
+  open: 'bg-amber-100 text-amber-700',
+  in_review: 'bg-blue-100 text-blue-700',
+  resolved: 'bg-brand-100 text-brand-700',
+};
+
+const TICKET_CATEGORY_LABELS = {
+  provider_no_show: 'Provider didn\u2019t arrive',
+  wrong_order: 'Wrong order',
+  damaged_items: 'Damaged clothes/items',
+  poor_repair: 'Poor repair quality',
+  payment_problem: 'Payment problem',
+  refund_issue: 'Refund issue',
+  other: 'Something else',
+};
+
 export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const [providers, setProviders] = useState([]);
@@ -16,6 +32,9 @@ export default function AdminDashboard() {
   const [updatingId, setUpdatingId] = useState(null);
   const [unpricedOrders, setUnpricedOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [tickets, setTickets] = useState([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+  const [updatingTicketId, setUpdatingTicketId] = useState(null);
 
   function loadOverview() {
     adminApi.overview().then(setOverview).catch(() => setOverview(null));
@@ -45,10 +64,20 @@ export default function AdminDashboard() {
       .finally(() => setLoadingOrders(false));
   }
 
+  function loadTickets() {
+    setLoadingTickets(true);
+    adminApi
+      .supportTickets()
+      .then((d) => setTickets(d.tickets))
+      .catch(() => setTickets([]))
+      .finally(() => setLoadingTickets(false));
+  }
+
   useEffect(() => {
     loadOverview();
     loadProviders();
     loadOrders();
+    loadTickets();
   }, []);
 
   async function handleStatusChange(providerId, status) {
@@ -61,6 +90,18 @@ export default function AdminDashboard() {
       alert(err.message || 'Could not update provider status');
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleTicketStatusChange(ticketId, status) {
+    setUpdatingTicketId(ticketId);
+    try {
+      await adminApi.setTicketStatus(ticketId, status);
+      loadTickets();
+    } catch (err) {
+      alert(err.message || 'Could not update ticket status');
+    } finally {
+      setUpdatingTicketId(null);
     }
   }
 
@@ -147,6 +188,51 @@ export default function AdminDashboard() {
                       className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
                     >
                       <Clock className="w-3.5 h-3.5" /> Set pending
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <h2 className="text-lg font-semibold mb-3 mt-10">Support tickets</h2>
+        {loadingTickets ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : tickets.length === 0 ? (
+          <p className="text-sm text-gray-400">No support tickets have been filed.</p>
+        ) : (
+          <ul className="space-y-2">
+            {tickets.map((t) => (
+              <li key={t.id} className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm">
+                    {TICKET_CATEGORY_LABELS[t.category] || t.category}
+                  </span>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${TICKET_STATUS_STYLES[t.status]}`}
+                  >
+                    {t.status.replace('_', ' ')}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">{t.message}</p>
+                <div className="flex items-center gap-2">
+                  {t.status !== 'in_review' && (
+                    <button
+                      onClick={() => handleTicketStatusChange(t.id, 'in_review')}
+                      disabled={updatingTicketId === t.id}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Mark in review
+                    </button>
+                  )}
+                  {t.status !== 'resolved' && (
+                    <button
+                      onClick={() => handleTicketStatusChange(t.id, 'resolved')}
+                      disabled={updatingTicketId === t.id}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+                    >
+                      <CircleCheck className="w-3.5 h-3.5" /> Mark resolved
                     </button>
                   )}
                 </div>
