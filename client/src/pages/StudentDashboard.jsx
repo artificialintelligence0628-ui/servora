@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Droplets, Shirt, Flame, Wrench } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { orderApi } from '../api';
-
-const SERVICE_ICONS = { water: Droplets, laundry: Shirt, gas: Flame, repairs: Wrench };
+import { SERVICE_CONFIG } from '../serviceConfig';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -27,14 +26,15 @@ export default function StudentDashboard() {
         <p className="text-gray-500 mb-8 text-sm">What do you need today?</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          {Object.entries(SERVICE_ICONS).map(([key, Icon]) => (
-            <button
+          {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
+            <Link
               key={key}
-              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition capitalize"
+              to={`/request/${key}`}
+              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition"
             >
               <Icon className="w-6 h-6 text-brand-600" />
-              <span className="text-sm font-medium">{key}</span>
-            </button>
+              <span className="text-sm font-medium">{label}</span>
+            </Link>
           ))}
         </div>
 
@@ -48,12 +48,14 @@ export default function StudentDashboard() {
         ) : (
           <ul className="space-y-2">
             {orders.map((o) => (
-              <li
-                key={o.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm"
-              >
-                <span className="capitalize font-medium">{o.service_type}</span>
-                <span className="text-gray-500 capitalize">{o.status.replace('_', ' ')}</span>
+              <li key={o.id}>
+                <Link
+                  to={`/orders/${o.id}`}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm hover:border-brand-400 transition"
+                >
+                  <span className="capitalize font-medium">{o.service_type}</span>
+                  <span className="text-gray-500 capitalize">{o.status.replace('_', ' ')}</span>
+                </Link>
               </li>
             ))}
           </ul>

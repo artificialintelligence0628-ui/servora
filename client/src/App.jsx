@@ -7,6 +7,8 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import StudentDashboard from './pages/StudentDashboard.jsx';
 import ProviderDashboard from './pages/ProviderDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import RequestService from './pages/RequestService.jsx';
+import OrderTracking from './pages/OrderTracking.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 export default function App() {
@@ -23,6 +25,22 @@ export default function App() {
         element={
           <ProtectedRoute roles={['student']}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/request/:serviceType"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <RequestService />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/orders/:orderId"
+        element={
+          <ProtectedRoute>
+            <OrderTracking />
           </ProtectedRoute>
         }
       />

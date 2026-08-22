@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplets, Shirt, Flame, Wrench } from 'lucide-react';
 import { healthApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-
-const SERVICES = [
-  { key: 'water', label: 'Water', icon: Droplets },
-  { key: 'laundry', label: 'Laundry', icon: Shirt },
-  { key: 'gas', label: 'Gas', icon: Flame },
-  { key: 'repairs', label: 'Repairs', icon: Wrench },
-];
+import { SERVICE_CONFIG } from '../serviceConfig';
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState('checking...');
@@ -24,11 +17,11 @@ export default function Home() {
       .catch(() => setApiStatus('unreachable'));
   }, []);
 
-  function goRequestService() {
+  function goRequestService(serviceKey) {
     if (!user) navigate('/register');
     else if (user.role === 'provider') navigate('/provider');
     else if (user.role === 'admin') navigate('/admin');
-    else navigate('/dashboard');
+    else navigate(serviceKey ? `/request/${serviceKey}` : '/dashboard');
   }
 
   return (
@@ -50,10 +43,10 @@ export default function Home() {
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl w-full">
-          {SERVICES.map(({ key, label, icon: Icon }) => (
+          {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
             <button
               key={key}
-              onClick={goRequestService}
+              onClick={() => goRequestService(key)}
               className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition"
             >
               <Icon className="w-6 h-6 text-brand-600" />
@@ -63,7 +56,7 @@ export default function Home() {
         </div>
 
         <button
-          onClick={goRequestService}
+          onClick={() => goRequestService()}
           className="mt-10 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-lg transition"
         >
           Request a Service
