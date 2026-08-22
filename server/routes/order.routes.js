@@ -24,8 +24,14 @@ router.post('/', requireAuth, requireRole('student'), upload.single('photo'), as
     }
 
     if (req.file) {
-      const { url } = await uploadBuffer(req.file.buffer, { folder: 'servora/orders' });
-      parsedDetails.photoUrl = url;
+      try {
+        const { url } = await uploadBuffer(req.file.buffer, { folder: 'servora/orders' });
+        parsedDetails.photoUrl = url;
+      } catch (uploadErr) {
+        // Don't let a missing/misconfigured Cloudinary block the whole request —
+        // the photo is optional, so log it and continue without one.
+        console.warn('[orders] Photo upload failed, continuing without photo:', uploadErr.message);
+      }
     }
 
     const order = await createOrder({
