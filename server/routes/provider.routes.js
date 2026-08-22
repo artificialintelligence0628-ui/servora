@@ -3,9 +3,12 @@ import {
   findProviderByUserId, setAvailability, updateProviderProfile,
 } from '../store/providerStore.js';
 import { listOrdersForProvider, setOrderStatus } from '../store/orderStore.js';
+import { addDocument, listDocumentsForProvider } from '../store/documentStore.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadBuffer } from '../utils/cloudinary.js';
+
+const DOCUMENT_TYPES = ['id', 'cv', 'certificate', 'other'];
 
 const router = Router();
 router.use(requireAuth, requireRole('provider'));
@@ -38,13 +41,24 @@ router.post('/me/availability', async (req, res) => {
   res.json({ provider: updated });
 });
 
-router.post('/me/id-document', upload.single('document'), async (req, res) => {
+// Providers can upload several documents (ID, CV, certificates, etc.) rather
+// than a single generic one — matches how real onboarding actually works.
+router.post('/me/documents', upload.single('document'), async (req, res) => {
   const provider = await currentProvider(req, res);
   if (!provider) return;
   if (!req.file) return res.status(400).json({ error: 'document file is required' });
-  const { url } = await uploadBuffer(req.file.buffer, { folder: 'servora/verification' });
-  const updated = await updateProviderProfile(provider.id, { id_document_url: url });
-  res.json({ provider: updated });
+
+  const documentType = DOCUMENT_TYPES.includes(req.body.documentType) ? req.body.documentType : 'other';
+  const { url } = await uploadBuffer(req.file.buffer, { folder: 'servora/documents' });
+  const document = await addDocument(provider.id, documentType, url);
+  res.status(201).json({ document });
+});
+
+router.get('/me/documents', async (req, res) => {
+  const provider = await currentProvider(req, res);
+  if (!provider) return;
+  const documents = await listDocumentsForProvider(provider.id);
+  res.json({ documents });
 });
 
 router.get('/me/orders', async (req, res) => {

@@ -143,67 +143,12 @@ export default function AdminDashboard() {
         ) : (
           <ul className="space-y-2">
             {providers.map((p) => (
-              <li
+              <ProviderRow
                 key={p.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{p.name}</span>
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize shrink-0 ${STATUS_STYLES[p.status]}`}
-                    >
-                      {p.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 truncate">
-                    {p.email} · {p.services?.join(', ') || 'no services set'} ·{' '}
-                    {p.operating_area || 'no area set'}
-                  </p>
-                  {p.id_document_url ? (
-                    <a
-                      href={p.id_document_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mt-0.5"
-                    >
-                      <FileCheck className="w-3 h-3" /> View ID document
-                    </a>
-                  ) : (
-                    <p className="text-xs text-gray-400 mt-0.5">No document uploaded yet</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {p.status !== 'verified' && (
-                    <button
-                      onClick={() => handleStatusChange(p.id, 'verified')}
-                      disabled={updatingId === p.id}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Verify
-                    </button>
-                  )}
-                  {p.status !== 'suspended' && (
-                    <button
-                      onClick={() => handleStatusChange(p.id, 'suspended')}
-                      disabled={updatingId === p.id}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> Suspend
-                    </button>
-                  )}
-                  {p.status !== 'pending' && (
-                    <button
-                      onClick={() => handleStatusChange(p.id, 'pending')}
-                      disabled={updatingId === p.id}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
-                    >
-                      <Clock className="w-3.5 h-3.5" /> Set pending
-                    </button>
-                  )}
-                </div>
-              </li>
+                provider={p}
+                updating={updatingId === p.id}
+                onStatusChange={(status) => handleStatusChange(p.id, status)}
+              />
             ))}
           </ul>
         )}
@@ -262,6 +207,134 @@ function Stat({ label, value }) {
     <div className="rounded-xl border border-gray-200 bg-white p-4">
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+const DOCUMENT_TYPE_LABELS = {
+  id: 'ID document',
+  cv: 'CV / work history',
+  certificate: 'Certificate',
+  other: 'Other document',
+};
+
+function ProviderRow({ provider: p, updating, onStatusChange }) {
+  const [expanded, setExpanded] = useState(false);
+  const [documents, setDocuments] = useState(null);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  function toggleExpanded() {
+    const next = !expanded;
+    setExpanded(next);
+    if (next && documents === null) {
+      setLoadingDocs(true);
+      adminApi
+        .providerDocuments(p.id)
+        .then((d) => setDocuments(d.documents))
+        .catch(() => setDocuments([]))
+        .finally(() => setLoadingDocs(false));
+    }
+  }
+
+  return (
+    <li className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <button onClick={toggleExpanded} className="min-w-0 text-left flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm truncate">{p.name}</span>
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize shrink-0 ${STATUS_STYLES[p.status]}`}
+            >
+              {p.status}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 truncate">
+            {p.email} · {p.services?.join(', ') || 'no services set'} ·{' '}
+            {p.operating_area || 'no area set'}
+          </p>
+          <span className="text-xs text-brand-600 mt-0.5 inline-block">
+            {expanded ? 'Hide full profile' : 'View full profile'}
+          </span>
+        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {p.status !== 'verified' && (
+            <button
+              onClick={() => onStatusChange('verified')}
+              disabled={updating}
+              className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> Verify
+            </button>
+          )}
+          {p.status !== 'suspended' && (
+            <button
+              onClick={() => onStatusChange('suspended')}
+              disabled={updating}
+              className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+            >
+              <XCircle className="w-3.5 h-3.5" /> Suspend
+            </button>
+          )}
+          {p.status !== 'pending' && (
+            <button
+              onClick={() => onStatusChange('pending')}
+              disabled={updating}
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg disabled:opacity-60"
+            >
+              <Clock className="w-3.5 h-3.5" /> Set pending
+            </button>
+          )}
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          <Field label="Full name" value={p.name} />
+          <Field label="Email" value={p.email} />
+          <Field label="Phone" value={p.phone || '—'} />
+          <Field label="Commission rate" value={`${p.commission_rate}%`} />
+          <Field label="Services" value={p.services?.join(', ') || '—'} />
+          <Field label="Operating area" value={p.operating_area || '—'} />
+          <Field label="Available" value={p.is_available ? 'Yes' : 'No'} />
+          <Field label="Registered" value={new Date(p.created_at).toLocaleDateString()} />
+
+          <div className="col-span-2 mt-2">
+            <p className="text-gray-500 mb-1.5">Documents</p>
+            {loadingDocs ? (
+              <p className="text-gray-400">Loading…</p>
+            ) : !documents || documents.length === 0 ? (
+              <p className="text-gray-400">No documents uploaded yet.</p>
+            ) : (
+              <ul className="space-y-1">
+                {documents.map((d) => (
+                  <li key={d.id}>
+                    <a
+                      href={d.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-brand-600 hover:underline"
+                    >
+                      <FileCheck className="w-3 h-3" />
+                      {DOCUMENT_TYPE_LABELS[d.document_type] || d.document_type} — uploaded{' '}
+                      {new Date(d.uploaded_at).toLocaleDateString()}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <div>
+      <p className="text-gray-400">{label}</p>
+      <p className="text-gray-800 font-medium truncate">{value}</p>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { listProviders, setProviderStatus } from '../store/providerStore.js';
+import { listProviders, setProviderStatus, findProviderById } from '../store/providerStore.js';
 import { listAllOrders, getRevenueSummary } from '../store/orderStore.js';
 import { listUsersByRole } from '../store/userStore.js';
+import { listDocumentsForProvider } from '../store/documentStore.js';
 import { query } from '../db.js';
 
 const router = Router();
@@ -40,6 +41,14 @@ router.post('/providers/:providerId/status', async (req, res) => {
   }
   const provider = await setProviderStatus(req.params.providerId, status);
   res.json({ provider });
+});
+
+// Full profile + every uploaded document, for review before approval.
+router.get('/providers/:providerId/documents', async (req, res) => {
+  const provider = await findProviderById(req.params.providerId);
+  if (!provider) return res.status(404).json({ error: 'Provider not found' });
+  const documents = await listDocumentsForProvider(provider.id);
+  res.json({ documents });
 });
 
 router.get('/students', async (req, res) => {

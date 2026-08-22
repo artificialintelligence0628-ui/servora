@@ -108,7 +108,7 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        <IdDocumentUpload provider={provider} onUploaded={setProvider} />
+        <DocumentsSection />
 
         <button
           onClick={toggleAvailability}
@@ -235,59 +235,103 @@ function PriceQuoteForm({ orderId, commissionRate, onQuoted }) {
   );
 }
 
-function IdDocumentUpload({ provider, onUploaded }) {
-  const [uploading, setUploading] = useState(false);
+const DOCUMENT_TYPE_LABELS = {
+  id: 'ID document',
+  cv: 'CV / work history',
+  certificate: 'Certificate',
+  other: 'Other document',
+};
+
+function DocumentsSection() {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadingType, setUploadingType] = useState(null);
   const [error, setError] = useState('');
 
-  async function handleFileChange(e) {
+  function loadDocuments() {
+    providerApi
+      .myDocuments()
+      .then((d) => setDocuments(d.documents))
+      .catch(() => setDocuments([]))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  async function handleFileChange(documentType, e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setError('');
-    setUploading(true);
+    setUploadingType(documentType);
     try {
-      const { provider: updated } = await providerApi.uploadIdDocument(file);
-      onUploaded(updated);
+      await providerApi.uploadDocument(documentType, file);
+      loadDocuments();
     } catch (err) {
       setError(err.message || 'Could not upload document');
     } finally {
-      setUploading(false);
+      setUploadingType(null);
       e.target.value = '';
     }
   }
 
   return (
     <div className="mb-6 rounded-lg border border-gray-200 bg-white px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-700">Identity verification</p>
-          {provider.id_document_url ? (
-            <a
-              href={provider.id_document_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline mt-0.5"
-            >
-              <FileCheck className="w-3.5 h-3.5" /> View uploaded document
-            </a>
-          ) : (
-            <p className="text-xs text-gray-500 mt-0.5">
-              Upload an ID or business document so an admin can verify your account.
-            </p>
-          )}
-        </div>
+      <p className="text-sm font-medium text-gray-700 mb-1">Verification documents</p>
+      <p className="text-xs text-gray-500 mb-3">
+        Upload your ID and CV so an admin can review and verify your account.
+      </p>
 
-        <label className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg cursor-pointer transition">
-          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-          {provider.id_document_url ? 'Replace' : 'Upload'}
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={handleFileChange}
-            disabled={uploading}
-            className="hidden"
-          />
-        </label>
-      </div>
+      {loading ? (
+        <p className="text-xs text-gray-400">Loading…</p>
+      ) : (
+        <ul className="space-y-2">
+          {Object.entries(DOCUMENT_TYPE_LABELS).map(([type, label]) => {
+            const uploaded = documents.filter((d) => d.document_type === type);
+            return (
+              <li key={type} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-700">{label}</p>
+                  {uploaded.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-0.5">
+                      {uploaded.map((d) => (
+                        <a
+                          key={d.id}
+                          href={d.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline"
+                        >
+                          <FileCheck className="w-3 h-3" /> View
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-0.5">Not uploaded</p>
+                  )}
+                </div>
+
+                <label className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-lg cursor-pointer transition">
+                  {uploadingType === type ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5" />
+                  )}
+                  {uploaded.length > 0 ? 'Add another' : 'Upload'}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={(e) => handleFileChange(type, e)}
+                    disabled={uploadingType !== null}
+                    className="hidden"
+                  />
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>
   );

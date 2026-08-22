@@ -72,11 +72,13 @@ export const providerApi = {
   updateProfile: (fields) => request('/providers/me', { method: 'PATCH', body: fields }),
   setAvailability: (isAvailable) =>
     request('/providers/me/availability', { method: 'POST', body: { isAvailable } }),
-  uploadIdDocument: (file) => {
+  uploadDocument: (documentType, file) => {
     const form = new FormData();
+    form.append('documentType', documentType);
     form.append('document', file);
-    return request('/providers/me/id-document', { method: 'POST', body: form, isFormData: true });
+    return request('/providers/me/documents', { method: 'POST', body: form, isFormData: true });
   },
+  myDocuments: () => request('/providers/me/documents'),
   myOrders: () => request('/providers/me/orders'),
   setOrderStatus: (orderId, status) =>
     request(`/providers/orders/${orderId}/status`, { method: 'POST', body: { status } }),
@@ -141,6 +143,7 @@ export const adminApi = {
   providers: (status) => request(`/admin/providers${status ? `?status=${status}` : ''}`),
   setProviderStatus: (providerId, status) =>
     request(`/admin/providers/${providerId}/status`, { method: 'POST', body: { status } }),
+  providerDocuments: (providerId) => request(`/admin/providers/${providerId}/documents`),
   students: () => request('/admin/students'),
   supportTickets: () => request('/admin/support-tickets'),
   setTicketStatus: (ticketId, status) =>
