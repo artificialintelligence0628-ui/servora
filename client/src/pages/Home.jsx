@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Droplets, Shirt, Flame, Wrench } from 'lucide-react';
 import { healthApi } from '../api';
+import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
 
 const SERVICES = [
   { key: 'water', label: 'Water', icon: Droplets },
@@ -11,6 +14,8 @@ const SERVICES = [
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState('checking...');
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     healthApi
@@ -19,12 +24,19 @@ export default function Home() {
       .catch(() => setApiStatus('unreachable'));
   }, []);
 
+  function goRequestService() {
+    if (!user) navigate('/register');
+    else if (user.role === 'provider') navigate('/provider');
+    else if (user.role === 'admin') navigate('/admin');
+    else navigate('/dashboard');
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <span className="font-bold text-lg text-brand-700">SERVORA</span>
+      <Navbar />
+      <div className="px-6 pt-2 text-right">
         <span className="text-xs text-gray-400">API: {apiStatus}</span>
-      </header>
+      </div>
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
         <p className="uppercase tracking-widest text-brand-600 text-xs font-semibold mb-2">
@@ -41,6 +53,7 @@ export default function Home() {
           {SERVICES.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
+              onClick={goRequestService}
               className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition"
             >
               <Icon className="w-6 h-6 text-brand-600" />
@@ -49,7 +62,10 @@ export default function Home() {
           ))}
         </div>
 
-        <button className="mt-10 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-lg transition">
+        <button
+          onClick={goRequestService}
+          className="mt-10 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-lg transition"
+        >
           Request a Service
         </button>
       </main>
