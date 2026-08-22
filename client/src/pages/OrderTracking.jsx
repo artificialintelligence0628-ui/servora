@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle2, Circle, ArrowLeft, Loader2, Star, LifeBuoy } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import ChatThread from '../components/ChatThread';
 import { orderApi, paymentApi, supportApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
 
@@ -169,6 +170,8 @@ export default function OrderTracking() {
               )}
             </div>
           )}
+
+          {order.provider_id && !isDeclinedOrCancelled && <ChatThread orderId={order.id} />}
 
           {!isDeclinedOrCancelled && <SupportSection orderId={order.id} />}
 

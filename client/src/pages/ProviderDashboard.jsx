@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import ChatThread from '../components/ChatThread';
 import { useAuth } from '../context/AuthContext';
 import { providerApi, orderApi } from '../api';
 
@@ -163,6 +164,8 @@ export default function ProviderDashboard() {
                       {Number(o.provider_payout).toFixed(2)} after commission
                     </p>
                   )}
+
+                  {!['declined', 'cancelled'].includes(o.status) && <ChatThread orderId={o.id} />}
 
                   {actions.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">

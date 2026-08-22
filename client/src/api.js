@@ -107,6 +107,15 @@ export const orderApi = {
 };
 
 // ---------------------------------------------------------------------
+// In-app messaging (per order thread)
+// ---------------------------------------------------------------------
+export const messageApi = {
+  list: (orderId) => request(`/orders/${orderId}/messages`),
+  send: (orderId, content) =>
+    request(`/orders/${orderId}/messages`, { method: 'POST', body: { content } }),
+};
+
+// ---------------------------------------------------------------------
 // Payments (Paystack)
 // ---------------------------------------------------------------------
 export const paymentApi = {

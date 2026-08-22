@@ -10,6 +10,18 @@ import { query } from '../db.js';
 
 const router = Router();
 
+// Shared ownership check: the student who placed it, the provider assigned
+// to it, or any admin — reused by the order detail, messaging, and (soon) other routes.
+async function canAccessOrder(user, order) {
+  if (order.student_id === user.id) return true;
+  if (user.role === 'admin') return true;
+  if (order.provider_id) {
+    const provider = await findProviderById(order.provider_id);
+    if (provider && provider.user_id === user.id) return true;
+  }
+  return false;
+}
+
 // ---- Create a request (student). Photo upload is optional (used by Repairs). ----
 router.post('/', requireAuth, requireRole('student'), upload.single('photo'), async (req, res) => {
   try {
@@ -69,13 +81,47 @@ router.get('/:orderId', requireAuth, async (req, res) => {
   const order = await findOrderById(req.params.orderId);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
-  const isOwner = order.student_id === req.user.id;
-  const isAdmin = req.user.role === 'admin';
-  const provider = order.provider_id ? await findProviderById(order.provider_id) : null;
-  const isAssignedProvider = provider && provider.user_id === req.user.id;
-
-  if (!isOwner && !isAdmin && !isAssignedProvider) return res.status(403).json({ error: 'Forbidden' });
+  const allowed = await canAccessOrder(req.user, order);
+  if (!allowed) return res.status(403).json({ error: 'Forbidden' });
   res.json({ order });
+});
+
+// ---- In-app messaging, scoped to the student/provider/admin on this order ----
+router.get('/:orderId/messages', requireAuth, async (req, res) => {
+  const order = await findOrderById(req.params.orderId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const allowed = await canAccessOrder(req.user, order);
+  if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+
+  const { rows } = await query(
+    `SELECT m.*, u.name AS sender_name, u.role AS sender_role
+     FROM messages m JOIN users u ON u.id = m.sender_id
+     WHERE m.order_id = $1
+     ORDER BY m.created_at ASC`,
+    [order.id]
+  );
+  res.json({ messages: rows });
+});
+
+router.post('/:orderId/messages', requireAuth, async (req, res) => {
+  const { content } = req.body;
+  if (!content || !content.trim()) return res.status(400).json({ error: 'content is required' });
+
+  const order = await findOrderById(req.params.orderId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const allowed = await canAccessOrder(req.user, order);
+  if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+
+  const { rows } = await query(
+    `INSERT INTO messages (order_id, sender_id, content) VALUES ($1, $2, $3)
+     RETURNING id, order_id, sender_id, content, created_at`,
+    [order.id, req.user.id, content.trim()]
+  );
+  res.status(201).json({
+    message: { ...rows[0], sender_name: req.user.name, sender_role: req.user.role },
+  });
 });
 
 // ---- Set pricing. Providers quote their own job using their own commission
