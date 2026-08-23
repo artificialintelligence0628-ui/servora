@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { orderApi } from '../api';
-import { SERVICE_CONFIG } from '../serviceConfig';
+import { getServiceConfig } from '../serviceConfig';
 
 export default function RequestService() {
   const { serviceType } = useParams();
   const navigate = useNavigate();
-  const config = SERVICE_CONFIG[serviceType];
+  const config = getServiceConfig(serviceType);
 
   const [values, setValues] = useState({});
   const [photo, setPhoto] = useState(null);
@@ -20,7 +20,7 @@ export default function RequestService() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (!config) {
+  if (!serviceType) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />

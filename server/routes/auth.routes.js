@@ -28,7 +28,12 @@ router.post('/register', async (req, res) => {
     const user = await createUser({ name, email: email.toLowerCase(), phone, passwordHash, role });
 
     if (role === 'provider') {
-      await createProviderProfile(user.id, { services: services ?? [], operatingArea });
+      // Services is now free text (not an enum), since providers can offer any
+      // profession — normalize so matching stays consistent (trim, lowercase, dedupe).
+      const normalizedServices = Array.isArray(services)
+        ? [...new Set(services.map((s) => String(s).trim().toLowerCase()).filter(Boolean))]
+        : [];
+      await createProviderProfile(user.id, { services: normalizedServices, operatingArea });
     }
 
     const token = crypto.randomBytes(32).toString('hex');

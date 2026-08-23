@@ -5,7 +5,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE user_role AS ENUM ('student', 'provider', 'admin');
 CREATE TYPE provider_status AS ENUM ('pending', 'verified', 'suspended');
-CREATE TYPE service_type AS ENUM ('water', 'laundry', 'gas', 'repairs');
+-- service_type is intentionally free text, not an enum: providers can offer
+-- any profession (tutor, hairdresser, plumber, etc.), not just the 4
+-- University quick-services (water/laundry/gas/repairs). Matching is
+-- case-insensitive (see providerStore.findAvailableProviders).
 CREATE TYPE order_status AS ENUM (
   'requested',      -- student submitted, awaiting match
   'assigned',        -- a provider has been matched
@@ -48,7 +51,7 @@ CREATE TABLE users (
 CREATE TABLE providers (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  services          service_type[] NOT NULL DEFAULT '{}',
+  services          TEXT[] NOT NULL DEFAULT '{}',
   operating_area    TEXT,
   status            provider_status NOT NULL DEFAULT 'pending',
   id_document_url   TEXT,
@@ -67,7 +70,7 @@ CREATE TABLE orders (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   provider_id       UUID REFERENCES providers(id) ON DELETE SET NULL,
-  service_type      service_type NOT NULL,
+  service_type      TEXT NOT NULL,
   details           JSONB NOT NULL DEFAULT '{}', -- e.g. {quantity, problem, photoUrl, notes}
   university        TEXT,
   hostel            TEXT,

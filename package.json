@@ -14,6 +14,7 @@
     "seed": "node seed.js",
     "db:push": "node run-schema.js",
     "db:migrate:documents": "node add-provider-documents.js",
+    "db:migrate:professions": "node add-open-professions.js",
     "db:check": "node check-db.js",
     "render-build": "npm install && npm run build"
   },

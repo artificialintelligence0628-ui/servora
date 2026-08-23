@@ -4,7 +4,7 @@ import { CheckCircle2, Circle, ArrowLeft, Loader2, Star, LifeBuoy } from 'lucide
 import Navbar from '../components/Navbar';
 import ChatThread from '../components/ChatThread';
 import { orderApi, paymentApi, supportApi } from '../api';
-import { SERVICE_CONFIG } from '../serviceConfig';
+import { getServiceConfig } from '../serviceConfig';
 import { useAuth } from '../context/AuthContext';
 
 const STEPS = ['requested', 'assigned', 'accepted', 'on_the_way', 'in_progress', 'completed'];
@@ -76,7 +76,7 @@ export default function OrderTracking() {
 
   const isDeclinedOrCancelled = order.status === 'declined' || order.status === 'cancelled';
   const currentIndex = STEPS.indexOf(order.status);
-  const config = SERVICE_CONFIG[order.service_type];
+  const config = getServiceConfig(order.service_type);
   const Icon = config?.icon;
   const needsPayment =
     order.price_amount &&

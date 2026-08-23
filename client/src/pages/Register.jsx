@@ -16,6 +16,7 @@ export default function Register() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [services, setServices] = useState([]);
+  const [otherProfessions, setOtherProfessions] = useState('');
   const [operatingArea, setOperatingArea] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,12 +27,20 @@ export default function Register() {
     );
   }
 
+  function parsedOtherProfessions() {
+    return otherProfessions
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
-    if (role === 'provider' && services.length === 0) {
-      setError('Pick at least one service you provide.');
+    const allServices = [...services, ...parsedOtherProfessions()];
+    if (role === 'provider' && allServices.length === 0) {
+      setError('Pick or type at least one service you provide.');
       return;
     }
 
@@ -39,7 +48,7 @@ export default function Register() {
     try {
       const payload = { name, email, phone, password, role };
       if (role === 'provider') {
-        payload.services = services;
+        payload.services = allServices;
         payload.operatingArea = operatingArea;
       }
       const user = await register(payload);
@@ -163,6 +172,19 @@ export default function Register() {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Other professions{' '}
+                    <span className="text-gray-400 font-normal">(not on the list above)</span>
+                  </label>
+                  <input
+                    value={otherProfessions}
+                    onChange={(e) => setOtherProfessions(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="e.g. tutor, hairdresser, plumber (comma separated)"
+                  />
                 </div>
 
                 <div>

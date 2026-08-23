@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { healthApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import ProfessionSearch from '../components/ProfessionSearch';
 import { SERVICE_CONFIG } from '../serviceConfig';
 
 export default function Home() {
@@ -39,10 +40,10 @@ export default function Home() {
           Your everyday services, delivered to you.
         </h1>
         <p className="text-gray-500 max-w-md mb-10">
-          Water, laundry, gas, and repairs — one request away.
+          Water, laundry, gas, repairs — or any professional you need, one request away.
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl w-full mb-6">
           {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
             <button
               key={key}
@@ -54,6 +55,8 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        <ProfessionSearch onNeedsAuth={!user ? () => navigate('/register') : undefined} />
 
         <button
           onClick={() => goRequestService()}

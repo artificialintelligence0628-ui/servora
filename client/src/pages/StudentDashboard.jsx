@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import ProfessionSearch from '../components/ProfessionSearch';
 import { useAuth } from '../context/AuthContext';
 import { orderApi } from '../api';
 import { SERVICE_CONFIG } from '../serviceConfig';
@@ -23,9 +24,9 @@ export default function StudentDashboard() {
       <Navbar />
       <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-1">Hi, {user.name.split(' ')[0]} 👋</h1>
-        <p className="text-gray-500 mb-8 text-sm">What do you need today?</p>
+        <p className="text-gray-500 mb-6 text-sm">What do you need today?</p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
             <Link
               key={key}
@@ -36,6 +37,10 @@ export default function StudentDashboard() {
               <span className="text-sm font-medium">{label}</span>
             </Link>
           ))}
+        </div>
+
+        <div className="mb-10">
+          <ProfessionSearch />
         </div>
 
         <h2 className="text-lg font-semibold mb-3">Your requests</h2>

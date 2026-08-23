@@ -1,6 +1,6 @@
 // serviceConfig.js — defines the extra fields each service type collects,
 // beyond the common location + timing fields every request shares.
-import { Droplets, Shirt, Flame, Wrench } from 'lucide-react';
+import { Droplets, Shirt, Flame, Wrench, Briefcase } from 'lucide-react';
 
 export const SERVICE_CONFIG = {
   water: {
@@ -79,3 +79,33 @@ export const SERVICE_CONFIG = {
     ],
   },
 };
+
+/**
+ * Returns the curated config for one of the 4 University quick-services, or a
+ * generic fallback for any other profession (e.g. "hairdresser", "tutor") —
+ * so a request for an arbitrary profession still gets a working form and a
+ * sensible icon/label instead of erroring out.
+ */
+export function getServiceConfig(serviceType) {
+  const key = (serviceType || '').toLowerCase();
+  if (SERVICE_CONFIG[key]) return SERVICE_CONFIG[key];
+
+  const label = serviceType
+    ? serviceType.charAt(0).toUpperCase() + serviceType.slice(1)
+    : 'Service';
+
+  return {
+    label,
+    icon: Briefcase,
+    tagline: `Tell us what you need from a ${label.toLowerCase()}.`,
+    fields: [
+      {
+        name: 'description',
+        label: 'Describe what you need',
+        type: 'textarea',
+        placeholder: 'What do you need help with?',
+      },
+      { name: 'photo', label: 'Upload a photo (optional)', type: 'file', optional: true },
+    ],
+  };
+}
