@@ -12,12 +12,25 @@ function authHeaders() {
   };
 }
 
-/** Initialize a transaction server-side (optional alternative to inline popup). */
-export async function initializeTransaction({ email, amountKobo, reference, metadata, callbackUrl }) {
+/**
+ * Initialize a transaction server-side (optional alternative to inline popup).
+ * Explicitly lists channels with mobile_money first — per the product spec,
+ * Mobile Money should be the central payment method for Ghanaian students,
+ * not just one option buried behind card on Paystack's default list.
+ */
+export async function initializeTransaction({ email, amountPesewas, reference, metadata, callbackUrl }) {
   const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ email, amount: amountKobo, reference, metadata, callback_url: callbackUrl }),
+    body: JSON.stringify({
+      email,
+      amount: amountPesewas,
+      reference,
+      metadata,
+      callback_url: callbackUrl,
+      currency: 'GHS',
+      channels: ['mobile_money', 'card', 'bank', 'ussd'],
+    }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Paystack initialize failed');

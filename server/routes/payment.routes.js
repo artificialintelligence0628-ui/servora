@@ -18,7 +18,7 @@ router.post('/initialize', requireAuth, requireRole('student'), async (req, res)
     const reference = `servora_${order.id}_${Date.now()}`;
     const data = await initializeTransaction({
       email: req.user.email,
-      amountKobo: Math.round(Number(order.price_amount) * 100),
+      amountPesewas: Math.round(Number(order.price_amount) * 100),
       reference,
       metadata: { orderId: order.id },
       callbackUrl: `${process.env.CLIENT_ORIGIN}/payment/callback`,
