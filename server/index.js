@@ -3,6 +3,10 @@ import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
+// Patches Express so errors thrown inside async route handlers are caught and
+// turned into a normal JSON error response, instead of crashing the whole
+// server process (Express 4 doesn't catch async errors on its own).
+import 'express-async-errors';
 
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -47,4 +51,11 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Servora API listening on port ${PORT}`);
+});
+
+// Last-resort safety net: log anything that somehow still slips through
+// (e.g. errors outside a request, like a bad startup query) instead of the
+// process dying with no explanation.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandled rejection]', reason);
 });
