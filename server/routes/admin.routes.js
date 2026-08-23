@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { listProviders, setProviderStatus, findProviderById } from '../store/providerStore.js';
-import { listAllOrders, getRevenueSummary } from '../store/orderStore.js';
+import { listAllOrders, getRevenueSummary, getOrdersByUniversity } from '../store/orderStore.js';
 import { listUsersByRole } from '../store/userStore.js';
 import { listDocumentsForProvider } from '../store/documentStore.js';
 import { query } from '../db.js';
@@ -10,17 +10,19 @@ const router = Router();
 router.use(requireAuth, requireRole('admin'));
 
 router.get('/overview', async (req, res) => {
-  const [revenue, orders, providers, students] = await Promise.all([
+  const [revenue, orders, providers, students, ordersByUniversity] = await Promise.all([
     getRevenueSummary(),
     listAllOrders(),
     listProviders(),
     listUsersByRole('student'),
+    getOrdersByUniversity(),
   ]);
   res.json({
     revenue,
     orderCount: orders.length,
     providerCount: providers.length,
     studentCount: students.length,
+    ordersByUniversity,
   });
 });
 

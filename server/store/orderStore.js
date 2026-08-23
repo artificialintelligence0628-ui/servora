@@ -92,3 +92,14 @@ export async function getRevenueSummary() {
   );
   return rows[0];
 }
+
+/** Order counts grouped by campus, for admin multi-campus reporting. */
+export async function getOrdersByUniversity() {
+  const { rows } = await query(
+    `SELECT COALESCE(NULLIF(university, ''), 'Unspecified') AS university, COUNT(*) AS order_count
+     FROM orders
+     GROUP BY university
+     ORDER BY order_count DESC`
+  );
+  return rows;
+}

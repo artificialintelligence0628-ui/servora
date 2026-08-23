@@ -41,6 +41,9 @@ export default function StudentDashboard() {
 
         <div className="mb-10">
           <ProfessionSearch />
+          <Link to="/browse" className="mt-2 inline-block text-xs text-gray-500 hover:text-gray-800 underline">
+            Or browse professionals already on Servora
+          </Link>
         </div>
 
         <h2 className="text-lg font-semibold mb-3">Your requests</h2>

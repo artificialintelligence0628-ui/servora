@@ -122,6 +122,20 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {overview?.ordersByUniversity?.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-lg font-semibold mb-3">Orders by campus</h2>
+            <ul className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+              {overview.ordersByUniversity.map((row) => (
+                <li key={row.university} className="flex items-center justify-between px-4 py-2 text-sm">
+                  <span className="text-gray-700">{row.university}</span>
+                  <span className="text-gray-500 font-medium">{row.order_count}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <h2 className="text-lg font-semibold mb-3">Orders needing a price</h2>
         {loadingOrders ? (
           <p className="text-sm text-gray-400 mb-10">Loading…</p>

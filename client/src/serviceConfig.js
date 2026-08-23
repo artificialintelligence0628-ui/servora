@@ -1,6 +1,6 @@
 // serviceConfig.js — defines the extra fields each service type collects,
 // beyond the common location + timing fields every request shares.
-import { Droplets, Shirt, Flame, Wrench, Briefcase } from 'lucide-react';
+import { Droplets, Shirt, Flame, Wrench, Briefcase, UtensilsCrossed, ShoppingCart } from 'lucide-react';
 
 export const SERVICE_CONFIG = {
   water: {
@@ -76,6 +76,36 @@ export const SERVICE_CONFIG = {
         placeholder: 'e.g. My socket isn\u2019t working…',
       },
       { name: 'photo', label: 'Upload a photo (optional)', type: 'file', optional: true },
+    ],
+  },
+  'food-delivery': {
+    label: 'Food',
+    icon: UtensilsCrossed,
+    tagline: 'Order from a local spot — we get it delivered.',
+    fields: [
+      { name: 'restaurantName', label: 'Restaurant / vendor', type: 'text', placeholder: 'e.g. Auntie Ama\u2019s' },
+      {
+        name: 'orderItems',
+        label: 'What do you want to order?',
+        type: 'textarea',
+        placeholder: 'e.g. 1 jollof + chicken, 1 bottled water',
+      },
+      { name: 'budget', label: 'Budget (GH₵, optional)', type: 'number', min: 1, optional: true },
+    ],
+  },
+  'grocery-shopping': {
+    label: 'Groceries',
+    icon: ShoppingCart,
+    tagline: 'Send us your list — we shop and deliver.',
+    fields: [
+      {
+        name: 'shoppingList',
+        label: 'Your shopping list',
+        type: 'textarea',
+        placeholder: 'e.g. rice, eggs, tomatoes, cooking oil…',
+      },
+      { name: 'preferredStore', label: 'Preferred store (optional)', type: 'text', optional: true },
+      { name: 'budget', label: 'Budget (GH₵, optional)', type: 'number', min: 1, optional: true },
     ],
   },
 };

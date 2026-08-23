@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import RequestService from './pages/RequestService.jsx';
 import OrderTracking from './pages/OrderTracking.jsx';
 import PaymentCallback from './pages/PaymentCallback.jsx';
+import BrowseProfessionals from './pages/BrowseProfessionals.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/browse" element={<BrowseProfessionals />} />
 
       <Route
         path="/dashboard"

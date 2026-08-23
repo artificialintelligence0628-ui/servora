@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, GraduationCap, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import { UNIVERSITIES } from '../universities';
 
 const SERVICE_OPTIONS = ['water', 'laundry', 'gas', 'repairs'];
 
@@ -17,6 +18,8 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [services, setServices] = useState([]);
   const [otherProfessions, setOtherProfessions] = useState('');
+  const [university, setUniversity] = useState('');
+  const [customUniversity, setCustomUniversity] = useState('');
   const [operatingArea, setOperatingArea] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,7 @@ export default function Register() {
       if (role === 'provider') {
         payload.services = allServices;
         payload.operatingArea = operatingArea;
+        payload.university = university === 'Other' ? customUniversity : university;
       }
       const user = await register(payload);
       if (user.role === 'provider') navigate('/provider');
@@ -189,13 +193,41 @@ export default function Register() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Operating area
+                    University / campus
+                  </label>
+                  <select
+                    value={university}
+                    onChange={(e) => setUniversity(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="" disabled>
+                      Select…
+                    </option>
+                    {UNIVERSITIES.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
+                  {university === 'Other' && (
+                    <input
+                      value={customUniversity}
+                      onChange={(e) => setCustomUniversity(e.target.value)}
+                      placeholder="Enter your university/campus"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Specific area / hostel
                   </label>
                   <input
                     value={operatingArea}
                     onChange={(e) => setOperatingArea(e.target.value)}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    placeholder="e.g. KTU Hostel Area, Koforidua"
+                    placeholder="e.g. KTU Hostel Area"
                   />
                 </div>
               </>

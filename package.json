@@ -15,6 +15,7 @@
     "db:push": "node run-schema.js",
     "db:migrate:documents": "node add-provider-documents.js",
     "db:migrate:professions": "node add-open-professions.js",
+    "db:migrate:university": "node add-provider-university.js",
     "db:check": "node check-db.js",
     "render-build": "npm install && npm run build"
   },

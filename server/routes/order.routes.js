@@ -25,7 +25,7 @@ async function canAccessOrder(user, order) {
 // ---- Create a request (student). Photo upload is optional (used by Repairs). ----
 router.post('/', requireAuth, requireRole('student'), upload.single('photo'), async (req, res) => {
   try {
-    const { serviceType, details, university, hostel, block, room, preferredTime } = req.body;
+    const { serviceType, details, university, hostel, block, room, preferredTime, preferredProviderId } = req.body;
     if (!serviceType) return res.status(400).json({ error: 'serviceType is required' });
 
     let parsedDetails = {};
@@ -54,17 +54,34 @@ router.post('/', requireAuth, requireRole('student'), upload.single('photo'), as
       preferredTime: preferredTime || null,
     });
 
-    // Attempt an immediate match against available providers in the area.
-    // Match on the broader university/campus area first, since providers typically
-    // register a wide operating area (e.g. a whole university) rather than a single
-    // hostel — matching against the narrower hostel text would rarely find them.
-    const candidates = await findAvailableProviders({ serviceType, operatingArea: university || hostel });
-    if (candidates.length > 0) {
-      await assignProvider(order.id, candidates[0].id);
+    // If the student picked a specific provider off the Browse page, honor that
+    // instead of auto-matching — but only if that provider is actually valid
+    // for this request (verified, available, offers this service).
+    let matchedProviderId = null;
+    if (preferredProviderId) {
+      const preferred = await findProviderById(preferredProviderId);
+      const offersService =
+        preferred?.services?.some((s) => s.toLowerCase() === serviceType.toLowerCase()) ?? false;
+      if (preferred && preferred.status === 'verified' && preferred.is_available && offersService) {
+        matchedProviderId = preferred.id;
+      }
+    }
+
+    if (!matchedProviderId) {
+      // Attempt an immediate match against available providers in the area.
+      // Match on the broader university/campus area first, since providers typically
+      // register a wide operating area (e.g. a whole university) rather than a single
+      // hostel — matching against the narrower hostel text would rarely find them.
+      const candidates = await findAvailableProviders({ serviceType, operatingArea: university || hostel });
+      if (candidates.length > 0) matchedProviderId = candidates[0].id;
+    }
+
+    if (matchedProviderId) {
+      await assignProvider(order.id, matchedProviderId);
     }
 
     const fresh = await findOrderById(order.id);
-    res.status(201).json({ order: fresh, matched: candidates.length > 0 });
+    res.status(201).json({ order: fresh, matched: Boolean(matchedProviderId) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not create request' });

@@ -17,12 +17,12 @@ function normalizeProviders(rows) {
   return rows.map(normalizeProvider);
 }
 
-export async function createProviderProfile(userId, { services = [], operatingArea } = {}) {
+export async function createProviderProfile(userId, { services = [], operatingArea, university } = {}) {
   const { rows } = await query(
-    `INSERT INTO providers (user_id, services, operating_area)
-     VALUES ($1, $2, $3)
+    `INSERT INTO providers (user_id, services, operating_area, university)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [userId, services, operatingArea ?? null]
+    [userId, services, operatingArea ?? null, university ?? null]
   );
   return normalizeProvider(rows[0]);
 }
@@ -44,7 +44,11 @@ export async function findAvailableProviders({ serviceType, operatingArea, exclu
      WHERE status = 'verified'
        AND is_available = TRUE
        AND EXISTS (SELECT 1 FROM unnest(services) s WHERE LOWER(s) = LOWER($1))
-       AND ($2::text IS NULL OR operating_area ILIKE '%' || $2 || '%')
+       AND (
+         $2::text IS NULL
+         OR operating_area ILIKE '%' || $2 || '%'
+         OR university ILIKE '%' || $2 || '%'
+       )
        AND ($3::uuid IS NULL OR id <> $3)
      ORDER BY rating_avg DESC
      LIMIT 10`,
@@ -70,7 +74,7 @@ export async function setAvailability(providerId, isAvailable) {
 }
 
 export async function updateProviderProfile(providerId, fields) {
-  const allowed = ['services', 'operating_area', 'commission_rate', 'id_document_url'];
+  const allowed = ['services', 'operating_area', 'university', 'commission_rate', 'id_document_url'];
   const sets = [];
   const values = [providerId];
   for (const key of allowed) {
@@ -108,6 +112,27 @@ export async function listProviders({ status } = {}) {
      WHERE ($1::provider_status IS NULL OR p.status = $1)
      ORDER BY p.created_at DESC`,
     [status ?? null]
+  );
+  return normalizeProviders(rows);
+}
+
+/**
+ * Public-safe provider listing for browsing — verified & available only,
+ * and deliberately excludes contact info (email/phone/documents). Anyone can
+ * see who's on the platform and pick one, but contact stays in-app via chat.
+ */
+export async function listPublicProviders({ service, university } = {}) {
+  const { rows } = await query(
+    `SELECT p.id, p.services, p.operating_area, p.university, p.rating_avg, p.rating_count,
+            u.name
+     FROM providers p JOIN users u ON u.id = p.user_id
+     WHERE p.status = 'verified'
+       AND p.is_available = TRUE
+       AND ($1::text IS NULL OR EXISTS (SELECT 1 FROM unnest(p.services) s WHERE LOWER(s) = LOWER($1)))
+       AND ($2::text IS NULL OR p.university ILIKE '%' || $2 || '%' OR p.operating_area ILIKE '%' || $2 || '%')
+     ORDER BY p.rating_avg DESC
+     LIMIT 50`,
+    [service ?? null, university ?? null]
   );
   return normalizeProviders(rows);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { healthApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -57,6 +57,10 @@ export default function Home() {
         </div>
 
         <ProfessionSearch onNeedsAuth={!user ? () => navigate('/register') : undefined} />
+
+        <Link to="/browse" className="mt-3 text-sm text-gray-500 hover:text-gray-800 underline">
+          Or browse professionals already on Servora
+        </Link>
 
         <button
           onClick={() => goRequestService()}

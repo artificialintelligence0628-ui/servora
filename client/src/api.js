@@ -88,7 +88,9 @@ export const providerApi = {
 // Orders (service requests)
 // ---------------------------------------------------------------------
 export const orderApi = {
-  create: ({ serviceType, details, university, hostel, block, room, preferredTime, photo }) => {
+  create: ({
+    serviceType, details, university, hostel, block, room, preferredTime, photo, preferredProviderId,
+  }) => {
     const form = new FormData();
     form.append('serviceType', serviceType);
     form.append('details', JSON.stringify(details || {}));
@@ -98,6 +100,7 @@ export const orderApi = {
     if (room) form.append('room', room);
     if (preferredTime) form.append('preferredTime', preferredTime);
     if (photo) form.append('photo', photo);
+    if (preferredProviderId) form.append('preferredProviderId', preferredProviderId);
     return request('/orders', { method: 'POST', body: form, isFormData: true });
   },
   mine: () => request('/orders/mine'),
@@ -153,4 +156,17 @@ export const adminApi = {
 
 export const healthApi = {
   check: () => request('/health'),
+};
+
+// ---------------------------------------------------------------------
+// Public browsing (no auth required)
+// ---------------------------------------------------------------------
+export const publicApi = {
+  listProfessionals: ({ service, university } = {}) => {
+    const params = new URLSearchParams();
+    if (service) params.set('service', service);
+    if (university) params.set('university', university);
+    const qs = params.toString();
+    return request(`/public/professionals${qs ? `?${qs}` : ''}`);
+  },
 };

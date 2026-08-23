@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Loader2, ArrowLeft, UserCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { orderApi } from '../api';
 import { getServiceConfig } from '../serviceConfig';
+import { UNIVERSITIES } from '../universities';
 
 export default function RequestService() {
   const { serviceType } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preferredProviderId = searchParams.get('providerId') || undefined;
+  const preferredProviderName = searchParams.get('providerName') || undefined;
   const config = getServiceConfig(serviceType);
 
   const [values, setValues] = useState({});
   const [photo, setPhoto] = useState(null);
   const [university, setUniversity] = useState('');
+  const [customUniversity, setCustomUniversity] = useState('');
   const [hostel, setHostel] = useState('');
   const [block, setBlock] = useState('');
   const [room, setRoom] = useState('');
@@ -63,12 +68,13 @@ export default function RequestService() {
       const { order } = await orderApi.create({
         serviceType,
         details,
-        university,
+        university: university === 'Other' ? customUniversity : university,
         hostel,
         block,
         room,
         preferredTime: preferredTime || undefined,
         photo: config.fields.some((f) => f.type === 'file') ? photo : undefined,
+        preferredProviderId,
       });
       navigate(`/orders/${order.id}`);
     } catch (err) {
@@ -98,6 +104,13 @@ export default function RequestService() {
           </div>
           <p className="text-gray-500 mb-8 text-sm">{config.tagline}</p>
 
+          {preferredProviderName && (
+            <div className="mb-6 flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">
+              <UserCheck className="w-4 h-4 shrink-0" />
+              Requesting directly from <strong>{preferredProviderName}</strong>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {config.fields.map((field) => (
               <FormField
@@ -114,12 +127,28 @@ export default function RequestService() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">University</label>
-                  <input
+                  <select
                     value={university}
                     onChange={(e) => setUniversity(e.target.value)}
-                    placeholder="e.g. Koforidua Technical University"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  />
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="" disabled>
+                      Select…
+                    </option>
+                    {UNIVERSITIES.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
+                  {university === 'Other' && (
+                    <input
+                      value={customUniversity}
+                      onChange={(e) => setCustomUniversity(e.target.value)}
+                      placeholder="Enter your university"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                  )}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">
