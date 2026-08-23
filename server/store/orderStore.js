@@ -2,13 +2,16 @@
 import { query } from '../db.js';
 
 export async function createOrder({
-  studentId, serviceType, details, university, hostel, block, room, preferredTime,
+  studentId, serviceType, details, university, hostel, block, room, preferredTime, durationDays,
 }) {
   const { rows } = await query(
-    `INSERT INTO orders (student_id, service_type, details, university, hostel, block, room, preferred_time)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO orders (student_id, service_type, details, university, hostel, block, room, preferred_time, duration_days)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
-    [studentId, serviceType, details ?? {}, university ?? null, hostel ?? null, block ?? null, room ?? null, preferredTime ?? null]
+    [
+      studentId, serviceType, details ?? {}, university ?? null, hostel ?? null, block ?? null,
+      room ?? null, preferredTime ?? null, durationDays ?? null,
+    ]
   );
   return rows[0];
 }

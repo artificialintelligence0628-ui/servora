@@ -22,6 +22,7 @@ export default function RequestService() {
   const [block, setBlock] = useState('');
   const [room, setRoom] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
+  const [durationDays, setDurationDays] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -75,6 +76,7 @@ export default function RequestService() {
         preferredTime: preferredTime || undefined,
         photo: config.fields.some((f) => f.type === 'file') ? photo : undefined,
         preferredProviderId,
+        durationDays: durationDays || undefined,
       });
       navigate(`/orders/${order.id}`);
     } catch (err) {
@@ -193,6 +195,24 @@ export default function RequestService() {
                 onChange={(e) => setPreferredTime(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                How many days do you think this will take?{' '}
+                <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={durationDays}
+                onChange={(e) => setDurationDays(e.target.value)}
+                placeholder="e.g. 1"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Helps the provider quote accurately for bigger jobs.
+              </p>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}

@@ -133,6 +133,7 @@ export default function OrderTracking() {
             {order.hostel}
             {order.block ? `, Block ${order.block}` : ''}
             {order.room ? `, Room ${order.room}` : ''}
+            {order.duration_days ? ` · est. ${order.duration_days} day${order.duration_days > 1 ? 's' : ''}` : ''}
           </p>
 
           {isDeclinedOrCancelled ? (

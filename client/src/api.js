@@ -90,6 +90,7 @@ export const providerApi = {
 export const orderApi = {
   create: ({
     serviceType, details, university, hostel, block, room, preferredTime, photo, preferredProviderId,
+    durationDays,
   }) => {
     const form = new FormData();
     form.append('serviceType', serviceType);
@@ -101,6 +102,7 @@ export const orderApi = {
     if (preferredTime) form.append('preferredTime', preferredTime);
     if (photo) form.append('photo', photo);
     if (preferredProviderId) form.append('preferredProviderId', preferredProviderId);
+    if (durationDays) form.append('durationDays', durationDays);
     return request('/orders', { method: 'POST', body: form, isFormData: true });
   },
   mine: () => request('/orders/mine'),

@@ -143,6 +143,7 @@ export default function ProviderDashboard() {
                     {o.hostel}
                     {o.block ? `, Block ${o.block}` : ''}
                     {o.room ? `, Room ${o.room}` : ''}
+                    {o.duration_days ? ` · est. ${o.duration_days} day${o.duration_days > 1 ? 's' : ''}` : ''}
                   </p>
                   {o.details && Object.keys(o.details).length > 0 && (
                     <p className="text-xs text-gray-400 mb-2">

@@ -25,7 +25,9 @@ async function canAccessOrder(user, order) {
 // ---- Create a request (student). Photo upload is optional (used by Repairs). ----
 router.post('/', requireAuth, requireRole('student'), upload.single('photo'), async (req, res) => {
   try {
-    const { serviceType, details, university, hostel, block, room, preferredTime, preferredProviderId } = req.body;
+    const {
+      serviceType, details, university, hostel, block, room, preferredTime, preferredProviderId, durationDays,
+    } = req.body;
     if (!serviceType) return res.status(400).json({ error: 'serviceType is required' });
 
     let parsedDetails = {};
@@ -52,6 +54,7 @@ router.post('/', requireAuth, requireRole('student'), upload.single('photo'), as
       details: parsedDetails,
       university, hostel, block, room,
       preferredTime: preferredTime || null,
+      durationDays: durationDays ? Number(durationDays) : null,
     });
 
     // If the student picked a specific provider off the Browse page, honor that
