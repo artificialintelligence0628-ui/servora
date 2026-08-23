@@ -17,6 +17,7 @@
     "db:migrate:professions": "node add-open-professions.js",
     "db:migrate:university": "node add-provider-university.js",
     "db:migrate:duration": "node add-order-duration.js",
+    "db:migrate:references": "node add-provider-references.js",
     "db:check": "node check-db.js",
     "render-build": "npm install && npm run build"
   },

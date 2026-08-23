@@ -17,12 +17,12 @@ function normalizeProviders(rows) {
   return rows.map(normalizeProvider);
 }
 
-export async function createProviderProfile(userId, { services = [], operatingArea, university } = {}) {
+export async function createProviderProfile(userId, { services = [], operatingArea, university, references } = {}) {
   const { rows } = await query(
-    `INSERT INTO providers (user_id, services, operating_area, university)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO providers (user_id, services, operating_area, university, references_info)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [userId, services, operatingArea ?? null, university ?? null]
+    [userId, services, operatingArea ?? null, university ?? null, references ?? null]
   );
   return normalizeProvider(rows[0]);
 }
@@ -74,7 +74,7 @@ export async function setAvailability(providerId, isAvailable) {
 }
 
 export async function updateProviderProfile(providerId, fields) {
-  const allowed = ['services', 'operating_area', 'university', 'commission_rate', 'id_document_url'];
+  const allowed = ['services', 'operating_area', 'university', 'references_info', 'commission_rate', 'id_document_url'];
   const sets = [];
   const values = [providerId];
   for (const key of allowed) {

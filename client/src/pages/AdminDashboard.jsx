@@ -313,6 +313,13 @@ function ProviderRow({ provider: p, updating, onStatusChange }) {
           <Field label="Available" value={p.is_available ? 'Yes' : 'No'} />
           <Field label="Registered" value={new Date(p.created_at).toLocaleDateString()} />
 
+          {p.references_info && (
+            <div className="col-span-2">
+              <p className="text-gray-400">References</p>
+              <p className="text-gray-800 whitespace-pre-wrap">{p.references_info}</p>
+            </div>
+          )}
+
           <div className="col-span-2 mt-2">
             <p className="text-gray-500 mb-1.5">Documents</p>
             {loadingDocs ? (

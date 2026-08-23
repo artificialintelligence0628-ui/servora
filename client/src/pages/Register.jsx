@@ -21,6 +21,7 @@ export default function Register() {
   const [university, setUniversity] = useState('');
   const [customUniversity, setCustomUniversity] = useState('');
   const [operatingArea, setOperatingArea] = useState('');
+  const [references, setReferences] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +55,7 @@ export default function Register() {
         payload.services = allServices;
         payload.operatingArea = operatingArea;
         payload.university = university === 'Other' ? customUniversity : university;
+        payload.references = references || undefined;
       }
       const user = await register(payload);
       if (user.role === 'provider') navigate('/provider');
@@ -228,6 +230,19 @@ export default function Register() {
                     onChange={(e) => setOperatingArea(e.target.value)}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="e.g. KTU Hostel Area"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    References <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={references}
+                    onChange={(e) => setReferences(e.target.value)}
+                    rows={2}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="Names and contact info of people who can vouch for your work"
                   />
                 </div>
               </>

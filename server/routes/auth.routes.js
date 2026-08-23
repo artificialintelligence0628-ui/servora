@@ -13,7 +13,7 @@ const router = Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, phone, role = 'student', services, operatingArea, university } = req.body;
+    const { name, email, password, phone, role = 'student', services, operatingArea, university, references } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'name, email, and password are required' });
     }
@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
       const normalizedServices = Array.isArray(services)
         ? [...new Set(services.map((s) => String(s).trim().toLowerCase()).filter(Boolean))]
         : [];
-      await createProviderProfile(user.id, { services: normalizedServices, operatingArea, university });
+      await createProviderProfile(user.id, { services: normalizedServices, operatingArea, university, references });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
