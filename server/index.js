@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 // Patches Express so errors thrown inside async route handlers are caught and
@@ -18,6 +19,7 @@ import adminRoutes from './routes/admin.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import pushRoutes from './routes/push.routes.js';
+import { attachSocket } from './socket.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -53,7 +55,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+const httpServer = createServer(app);
+attachSocket(httpServer, process.env.CLIENT_ORIGIN);
+httpServer.listen(PORT, () => {
   console.log(`Servora API listening on port ${PORT}`);
 });
 

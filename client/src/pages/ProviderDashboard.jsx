@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck, Upload, FileCheck, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ChatThread from '../components/ChatThread';
+import CallButton from '../components/CallButton';
 import NotificationPrompt from '../components/NotificationPrompt';
 import { useAuth } from '../context/AuthContext';
 import { providerApi, orderApi } from '../api';
@@ -171,7 +172,12 @@ export default function ProviderDashboard() {
                     </p>
                   )}
 
-                  {!['declined', 'cancelled'].includes(o.status) && <ChatThread orderId={o.id} />}
+                  {!['declined', 'cancelled'].includes(o.status) && (
+                    <>
+                      <CallButton orderId={o.id} />
+                      <ChatThread orderId={o.id} />
+                    </>
+                  )}
 
                   {actions.length > 0 && (
                     <div className="flex items-center gap-2 mt-2">

@@ -8,20 +8,9 @@ import { upload } from '../middleware/upload.js';
 import { uploadBuffer } from '../utils/cloudinary.js';
 import { query } from '../db.js';
 import { notifyUser } from '../utils/push.js';
+import { canAccessOrder } from '../utils/orderAccess.js';
 
 const router = Router();
-
-// Shared ownership check: the student who placed it, the provider assigned
-// to it, or any admin — reused by the order detail, messaging, and (soon) other routes.
-async function canAccessOrder(user, order) {
-  if (order.student_id === user.id) return true;
-  if (user.role === 'admin') return true;
-  if (order.provider_id) {
-    const provider = await findProviderById(order.provider_id);
-    if (provider && provider.user_id === user.id) return true;
-  }
-  return false;
-}
 
 // ---- Create a request (student). Photo upload is optional (used by Repairs). ----
 router.post('/', requireAuth, requireRole('student'), upload.single('photo'), async (req, res) => {
