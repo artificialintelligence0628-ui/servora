@@ -11,6 +11,7 @@ import RequestService from './pages/RequestService.jsx';
 import OrderTracking from './pages/OrderTracking.jsx';
 import PaymentCallback from './pages/PaymentCallback.jsx';
 import BrowseProfessionals from './pages/BrowseProfessionals.jsx';
+import Account from './pages/Account.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 export default function App() {
@@ -52,6 +53,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <PaymentCallback />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <Account />
           </ProtectedRoute>
         }
       />

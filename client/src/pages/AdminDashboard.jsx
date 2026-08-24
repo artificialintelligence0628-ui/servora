@@ -35,6 +35,9 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [updatingTicketId, setUpdatingTicketId] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+  const [refundingId, setRefundingId] = useState(null);
 
   function loadOverview() {
     adminApi.overview().then(setOverview).catch(() => setOverview(null));
@@ -73,11 +76,21 @@ export default function AdminDashboard() {
       .finally(() => setLoadingTickets(false));
   }
 
+  function loadPayments() {
+    setLoadingPayments(true);
+    adminApi
+      .payments()
+      .then((d) => setPayments(d.payments))
+      .catch(() => setPayments([]))
+      .finally(() => setLoadingPayments(false));
+  }
+
   useEffect(() => {
     loadOverview();
     loadProviders();
     loadOrders();
     loadTickets();
+    loadPayments();
   }, []);
 
   async function handleStatusChange(providerId, status) {
@@ -102,6 +115,19 @@ export default function AdminDashboard() {
       alert(err.message || 'Could not update ticket status');
     } finally {
       setUpdatingTicketId(null);
+    }
+  }
+
+  async function handleRefund(paymentId) {
+    if (!confirm('Refund this payment in full? This calls Paystack directly and cannot be undone.')) return;
+    setRefundingId(paymentId);
+    try {
+      await adminApi.refundPayment(paymentId);
+      loadPayments();
+    } catch (err) {
+      alert(err.message || 'Could not process refund');
+    } finally {
+      setRefundingId(null);
     }
   }
 
@@ -163,6 +189,42 @@ export default function AdminDashboard() {
                 updating={updatingId === p.id}
                 onStatusChange={(status) => handleStatusChange(p.id, status)}
               />
+            ))}
+          </ul>
+        )}
+
+        <h2 className="text-lg font-semibold mb-3 mt-10">Payments</h2>
+        {loadingPayments ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : payments.length === 0 ? (
+          <p className="text-sm text-gray-400">No payments yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {payments.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm"
+              >
+                <div>
+                  <span className="capitalize font-medium">{p.service_type}</span>
+                  <span className="text-gray-400"> · {p.hostel}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="font-medium">GH₵{Number(p.amount).toFixed(2)}</p>
+                    <p className="text-xs text-gray-400 capitalize">{p.status}</p>
+                  </div>
+                  {p.status === 'paid' && (
+                    <button
+                      onClick={() => handleRefund(p.id)}
+                      disabled={refundingId === p.id}
+                      className="text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-60 px-2.5 py-1.5 rounded-lg transition"
+                    >
+                      Refund
+                    </button>
+                  )}
+                </div>
+              </li>
             ))}
           </ul>
         )}
@@ -261,6 +323,7 @@ function ProviderRow({ provider: p, updating, onStatusChange }) {
             >
               {p.status}
             </span>
+            <AvailabilityBadge provider={p} />
           </div>
           <p className="text-xs text-gray-500 truncate">
             {p.email} · {p.services?.join(', ') || 'no services set'} ·{' '}
@@ -348,6 +411,23 @@ function ProviderRow({ provider: p, updating, onStatusChange }) {
         </div>
       )}
     </li>
+  );
+}
+
+function AvailabilityBadge({ provider }) {
+  let label, style;
+  if (!provider.is_available) {
+    label = 'Offline';
+    style = 'bg-gray-100 text-gray-500';
+  } else if (provider.has_active_order) {
+    label = 'Busy';
+    style = 'bg-orange-100 text-orange-700';
+  } else {
+    label = 'Active';
+    style = 'bg-brand-100 text-brand-700';
+  }
+  return (
+    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${style}`}>{label}</span>
   );
 }
 

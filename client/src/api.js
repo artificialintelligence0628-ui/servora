@@ -62,6 +62,7 @@ export const userApi = {
     form.append('avatar', file);
     return request('/users/me/avatar', { method: 'POST', body: form, isFormData: true });
   },
+  myPayments: () => request('/users/me/payments'),
 };
 
 // ---------------------------------------------------------------------
@@ -154,6 +155,9 @@ export const adminApi = {
   supportTickets: () => request('/admin/support-tickets'),
   setTicketStatus: (ticketId, status) =>
     request(`/admin/support-tickets/${ticketId}/status`, { method: 'POST', body: { status } }),
+  payments: () => request('/payments'),
+  refundPayment: (paymentId, amount) =>
+    request(`/payments/${paymentId}/refund`, { method: 'POST', body: { amount } }),
 };
 
 export const healthApi = {

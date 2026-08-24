@@ -22,6 +22,11 @@ export default function Navbar() {
             <span className="text-gray-500">
               Hi, {user.name.split(' ')[0]} <span className="text-gray-400">({user.role})</span>
             </span>
+            {user.role === 'student' && (
+              <Link to="/account" className="text-gray-600 hover:text-gray-900 font-medium">
+                Account
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="text-gray-600 hover:text-gray-900 font-medium"

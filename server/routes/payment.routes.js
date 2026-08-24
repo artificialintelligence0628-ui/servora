@@ -2,7 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { findOrderById, setOrderStatus } from '../store/orderStore.js';
-import { initializeTransaction, verifyTransaction } from '../utils/paystack.js';
+import { initializeTransaction, verifyTransaction, refundTransaction } from '../utils/paystack.js';
 import { query } from '../db.js';
 
 const router = Router();
@@ -86,6 +86,37 @@ router.post('/webhook', async (req, res) => {
     console.error(err);
     res.sendStatus(500);
   }
+});
+
+// ---- Admin: list all payments, for the account/admin payments views ----
+router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
+  const { rows } = await query(
+    `SELECT pay.*, o.service_type, o.hostel, o.student_id
+     FROM payments pay
+     JOIN orders o ON o.id = pay.order_id
+     ORDER BY pay.created_at DESC`
+  );
+  res.json({ payments: rows });
+});
+
+// ---- Admin: refund a payment (full or partial) ----
+router.post('/:paymentId/refund', requireAuth, requireRole('admin'), async (req, res) => {
+  const { amount } = req.body; // optional partial refund amount in GHS
+  const { rows: paymentRows } = await query(`SELECT * FROM payments WHERE id = $1`, [req.params.paymentId]);
+  const payment = paymentRows[0];
+  if (!payment) return res.status(404).json({ error: 'Payment not found' });
+  if (payment.status !== 'paid') {
+    return res.status(400).json({ error: `Can't refund a payment that's ${payment.status}` });
+  }
+
+  const amountPesewas = amount ? Math.round(Number(amount) * 100) : undefined;
+  await refundTransaction(payment.paystack_reference, amountPesewas);
+
+  const { rows: updated } = await query(
+    `UPDATE payments SET status = 'refunded' WHERE id = $1 RETURNING *`,
+    [payment.id]
+  );
+  res.json({ payment: updated[0] });
 });
 
 export default router;

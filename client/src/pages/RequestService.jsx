@@ -5,22 +5,24 @@ import Navbar from '../components/Navbar';
 import { orderApi } from '../api';
 import { getServiceConfig } from '../serviceConfig';
 import { UNIVERSITIES } from '../universities';
+import { useAuth } from '../context/AuthContext';
 
 export default function RequestService() {
   const { serviceType } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const preferredProviderId = searchParams.get('providerId') || undefined;
   const preferredProviderName = searchParams.get('providerName') || undefined;
   const config = getServiceConfig(serviceType);
 
   const [values, setValues] = useState({});
   const [photo, setPhoto] = useState(null);
-  const [university, setUniversity] = useState('');
+  const [university, setUniversity] = useState(user.university || '');
   const [customUniversity, setCustomUniversity] = useState('');
-  const [hostel, setHostel] = useState('');
-  const [block, setBlock] = useState('');
-  const [room, setRoom] = useState('');
+  const [hostel, setHostel] = useState(user.hostel || '');
+  const [block, setBlock] = useState(user.block || '');
+  const [room, setRoom] = useState(user.room || '');
   const [preferredTime, setPreferredTime] = useState('');
   const [durationDays, setDurationDays] = useState('');
   const [error, setError] = useState('');

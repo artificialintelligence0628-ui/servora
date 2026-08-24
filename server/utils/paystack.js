@@ -47,3 +47,17 @@ export async function verifyTransaction(reference) {
   if (!res.ok) throw new Error(data.message || 'Paystack verify failed');
   return data.data; // { status: 'success' | 'failed' | ..., amount, reference, ... }
 }
+
+/** Refund a transaction, in full or partially, via Paystack. */
+export async function refundTransaction(reference, amountPesewas) {
+  const body = { transaction: reference };
+  if (amountPesewas) body.amount = amountPesewas;
+  const res = await fetch(`${PAYSTACK_BASE}/refund`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Paystack refund failed');
+  return data.data;
+}

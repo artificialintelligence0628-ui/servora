@@ -107,7 +107,12 @@ export async function recordRating(providerId, rating) {
 
 export async function listProviders({ status } = {}) {
   const { rows } = await query(
-    `SELECT p.*, u.name, u.email, u.phone
+    `SELECT p.*, u.name, u.email, u.phone,
+            EXISTS (
+              SELECT 1 FROM orders o
+              WHERE o.provider_id = p.id
+                AND o.status IN ('assigned', 'accepted', 'on_the_way', 'in_progress')
+            ) AS has_active_order
      FROM providers p JOIN users u ON u.id = p.user_id
      WHERE ($1::provider_status IS NULL OR p.status = $1)
      ORDER BY p.created_at DESC`,
