@@ -7,6 +7,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadBuffer } from '../utils/cloudinary.js';
 import { query } from '../db.js';
+import { notifyUser } from '../utils/push.js';
 
 const router = Router();
 
@@ -60,31 +61,36 @@ router.post('/', requireAuth, requireRole('student'), upload.single('photo'), as
     // If the student picked a specific provider off the Browse page, honor that
     // instead of auto-matching — but only if that provider is actually valid
     // for this request (verified, available, offers this service).
-    let matchedProviderId = null;
+    let matchedProvider = null;
     if (preferredProviderId) {
       const preferred = await findProviderById(preferredProviderId);
       const offersService =
         preferred?.services?.some((s) => s.toLowerCase() === serviceType.toLowerCase()) ?? false;
       if (preferred && preferred.status === 'verified' && preferred.is_available && offersService) {
-        matchedProviderId = preferred.id;
+        matchedProvider = preferred;
       }
     }
 
-    if (!matchedProviderId) {
+    if (!matchedProvider) {
       // Attempt an immediate match against available providers in the area.
       // Match on the broader university/campus area first, since providers typically
       // register a wide operating area (e.g. a whole university) rather than a single
       // hostel — matching against the narrower hostel text would rarely find them.
       const candidates = await findAvailableProviders({ serviceType, operatingArea: university || hostel });
-      if (candidates.length > 0) matchedProviderId = candidates[0].id;
+      if (candidates.length > 0) matchedProvider = candidates[0];
     }
 
-    if (matchedProviderId) {
-      await assignProvider(order.id, matchedProviderId);
+    if (matchedProvider) {
+      await assignProvider(order.id, matchedProvider.id);
+      notifyUser(matchedProvider.user_id, {
+        title: 'New Servora request',
+        body: `${serviceType} at ${hostel || university || 'your area'}`,
+        url: '/provider',
+      }).catch(() => {}); // never let a push failure break order creation
     }
 
     const fresh = await findOrderById(order.id);
-    res.status(201).json({ order: fresh, matched: Boolean(matchedProviderId) });
+    res.status(201).json({ order: fresh, matched: Boolean(matchedProvider) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not create request' });
@@ -156,6 +162,22 @@ router.post('/:orderId/messages', requireAuth, async (req, res) => {
   res.status(201).json({
     message: { ...rows[0], sender_name: req.user.name, sender_role: req.user.role },
   });
+
+  // Notify whoever didn't send this message — student or the assigned provider.
+  let recipientUserId = null;
+  if (req.user.id === order.student_id && order.provider_id) {
+    const provider = await findProviderById(order.provider_id);
+    recipientUserId = provider?.user_id;
+  } else if (req.user.id !== order.student_id) {
+    recipientUserId = order.student_id;
+  }
+  if (recipientUserId) {
+    notifyUser(recipientUserId, {
+      title: `New message from ${req.user.name}`,
+      body: content.trim().slice(0, 100),
+      url: `/orders/${order.id}`,
+    }).catch(() => {});
+  }
 });
 
 // ---- Set pricing. Providers quote their own job using their own commission

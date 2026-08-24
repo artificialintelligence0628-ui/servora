@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Truck, Wrench, PackageCheck, Upload, FileCheck, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ChatThread from '../components/ChatThread';
+import NotificationPrompt from '../components/NotificationPrompt';
 import { useAuth } from '../context/AuthContext';
 import { providerApi, orderApi } from '../api';
 
@@ -100,6 +101,8 @@ export default function ProviderDashboard() {
         <p className="text-gray-500 mb-6 text-sm capitalize">
           Services: {provider.services?.join(', ') || 'none set'} · {provider.operating_area || 'no area set'}
         </p>
+
+        <NotificationPrompt />
 
         {provider.status === 'pending' && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

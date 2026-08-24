@@ -176,3 +176,11 @@ export const publicApi = {
     return request(`/public/professionals${qs ? `?${qs}` : ''}`);
   },
 };
+
+// ---------------------------------------------------------------------
+// Push notifications
+// ---------------------------------------------------------------------
+export const pushApi = {
+  subscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: subscription }),
+  unsubscribe: (endpoint) => request('/push/unsubscribe', { method: 'POST', body: { endpoint } }),
+};

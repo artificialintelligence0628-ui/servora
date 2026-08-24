@@ -5,6 +5,7 @@ import { listAllOrders, getRevenueSummary, getOrdersByUniversity } from '../stor
 import { listUsersByRole } from '../store/userStore.js';
 import { listDocumentsForProvider } from '../store/documentStore.js';
 import { query } from '../db.js';
+import { notifyUser } from '../utils/push.js';
 
 const router = Router();
 router.use(requireAuth, requireRole('admin'));
@@ -74,7 +75,15 @@ router.post('/support-tickets/:ticketId/status', async (req, res) => {
     `UPDATE support_tickets SET status = $2 WHERE id = $1 RETURNING *`,
     [req.params.ticketId, status]
   );
-  res.json({ ticket: rows[0] });
+  const ticket = rows[0];
+  if (ticket) {
+    notifyUser(ticket.user_id, {
+      title: 'Support ticket update',
+      body: `Your support ticket is now: ${status.replace('_', ' ')}`,
+      url: '/account',
+    }).catch(() => {});
+  }
+  res.json({ ticket });
 });
 
 export default router;

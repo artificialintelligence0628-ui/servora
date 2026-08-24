@@ -18,6 +18,7 @@
     "db:migrate:university": "node add-provider-university.js",
     "db:migrate:duration": "node add-order-duration.js",
     "db:migrate:references": "node add-provider-references.js",
+    "db:migrate:push": "node add-push-subscriptions.js",
     "db:check": "node check-db.js",
     "render-build": "npm install && npm run build"
   },
@@ -34,7 +35,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "pg": "^8.13.1",
-    "resend": "^4.0.1"
+    "resend": "^4.0.1",
+    "web-push": "^3.6.7"
   },
   "engines": {
     "node": ">=18.18.0"

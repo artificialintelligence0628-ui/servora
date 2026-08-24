@@ -9,6 +9,7 @@ import { addDocument, listDocumentsForProvider } from '../store/documentStore.js
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadBuffer } from '../utils/cloudinary.js';
+import { notifyUser } from '../utils/push.js';
 
 const DOCUMENT_TYPES = ['id', 'cv', 'certificate', 'other'];
 
@@ -97,10 +98,32 @@ router.post('/orders/:orderId/status', async (req, res) => {
       candidates.length > 0
         ? await assignProvider(order.id, candidates[0].id)
         : await unassignProvider(order.id);
+
+    if (candidates.length > 0) {
+      notifyUser(candidates[0].user_id, {
+        title: 'New Servora request',
+        body: `${order.service_type} at ${order.hostel || order.university || 'your area'}`,
+        url: '/provider',
+      }).catch(() => {});
+    }
+    notifyUser(order.student_id, {
+      title: 'Servora request update',
+      body:
+        candidates.length > 0
+          ? "We've matched you with another provider."
+          : 'Looking for another provider for your request.',
+      url: `/orders/${order.id}`,
+    }).catch(() => {});
+
     return res.json({ order: updated, rematched: candidates.length > 0 });
   }
 
   const updated = await setOrderStatus(req.params.orderId, status);
+  notifyUser(order.student_id, {
+    title: 'Servora request update',
+    body: `Your ${order.service_type} request is now: ${status.replace('_', ' ')}`,
+    url: `/orders/${order.id}`,
+  }).catch(() => {});
   res.json({ order: updated });
 });
 

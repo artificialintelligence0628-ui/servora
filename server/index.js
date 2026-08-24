@@ -17,6 +17,7 @@ import paymentRoutes from './routes/payment.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import supportRoutes from './routes/support.routes.js';
 import publicRoutes from './routes/public.routes.js';
+import pushRoutes from './routes/push.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/push', pushRoutes);
 
 // ---- Serve the built React client (single Render web service) ----
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
