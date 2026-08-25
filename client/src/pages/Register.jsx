@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, GraduationCap, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import logoSquare from '../assets/logo-square.jpeg';
 import { UNIVERSITIES } from '../universities';
 
 const SERVICE_OPTIONS = ['water', 'laundry', 'gas', 'repairs'];
@@ -72,6 +73,7 @@ export default function Register() {
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-6 py-10">
         <div className="w-full max-w-sm">
+          <img src={logoSquare} alt="Servora" className="w-16 h-16 rounded-2xl shadow-md mb-6 mx-auto" />
           <h1 className="text-2xl font-bold mb-1">Create your account</h1>
           <p className="text-gray-500 mb-6 text-sm">
             Request services as a student, or offer them as a provider.

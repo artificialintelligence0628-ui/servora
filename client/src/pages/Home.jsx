@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import ProfessionSearch from '../components/ProfessionSearch';
 import { SERVICE_CONFIG } from '../serviceConfig';
+import logoWordmark from '../assets/logo-wordmark.jpeg';
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState('checking...');
@@ -28,43 +29,58 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="px-6 pt-2 text-right">
-        <span className="text-xs text-gray-400">API: {apiStatus}</span>
-      </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <p className="uppercase tracking-widest text-brand-600 text-xs font-semibold mb-2">
-          Service Made Simple
-        </p>
-        <h1 className="text-3xl md:text-4xl font-bold mb-3 max-w-xl">
-          Your everyday services, delivered to you.
-        </h1>
-        <p className="text-gray-500 max-w-md mb-10">
-          Water, laundry, gas, repairs — or any professional you need, one request away.
-        </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl w-full mb-6">
-          {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
-            <button
-              key={key}
-              onClick={() => goRequestService(key)}
-              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition"
-            >
-              <Icon className="w-6 h-6 text-brand-600" />
-              <span className="text-sm font-medium">{label}</span>
-            </button>
-          ))}
+      {/* Hero — dark canvas matching the logo's native palette */}
+      <section className="relative bg-ink-900 overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[36rem] h-[36rem] brand-glow rounded-full" />
         </div>
 
-        <ProfessionSearch onNeedsAuth={!user ? () => navigate('/register') : undefined} />
+        <div className="absolute top-4 right-6 text-xs text-gray-500">API: {apiStatus}</div>
 
-        <Link to="/browse" className="mt-3 text-sm text-gray-500 hover:text-gray-800 underline">
-          Or browse professionals already on Servora
-        </Link>
+        <div className="relative px-6 pt-16 pb-14 flex flex-col items-center text-center animate-fade-up">
+          <img src={logoWordmark} alt="Servora — Service Made Simple" className="h-16 sm:h-20 w-auto mb-8 rounded-lg" />
 
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 max-w-2xl leading-tight">
+            Water. Laundry. Repairs.
+            <br />
+            Or anyone else you need.
+          </h1>
+          <p className="text-gray-400 max-w-lg mb-10 text-base md:text-lg">
+            Tell Servora what you need — we match you with a trusted local provider, handle the
+            coordination, and keep it all in one place.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl w-full mb-8">
+            {Object.entries(SERVICE_CONFIG).map(([key, { label, icon: Icon }]) => (
+              <button
+                key={key}
+                onClick={() => goRequestService(key)}
+                className="group flex flex-col items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 hover:border-gold-500/50 hover:bg-white/10 transition"
+              >
+                <span className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Icon className="w-5 h-5 text-white" />
+                </span>
+                <span className="text-sm font-medium text-gray-200">{label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-xl p-2 w-full max-w-md mb-4">
+            <ProfessionSearch onNeedsAuth={!user ? () => navigate('/register') : undefined} />
+          </div>
+
+          <Link to="/browse" className="text-sm text-gray-400 hover:text-white underline underline-offset-4 transition">
+            Or browse professionals already on Servora
+          </Link>
+        </div>
+      </section>
+
+      {/* Below the fold — plain, light, functional */}
+      <main className="flex-1 flex items-center justify-center px-6 py-14 bg-gray-50">
         <button
           onClick={() => goRequestService()}
-          className="mt-10 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-lg transition"
+          className="bg-brand-gradient text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg shadow-brand-900/20 hover:shadow-xl hover:-translate-y-0.5 transition"
         >
           Request a Service
         </button>

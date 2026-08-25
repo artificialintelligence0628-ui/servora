@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import logoSquare from '../assets/logo-square.jpeg';
 
 export default function Login() {
   const { login } = useAuth();
@@ -33,6 +34,7 @@ export default function Login() {
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
+          <img src={logoSquare} alt="Servora" className="w-16 h-16 rounded-2xl shadow-md mb-6 mx-auto" />
           <h1 className="text-2xl font-bold mb-1">Welcome back</h1>
           <p className="text-gray-500 mb-6 text-sm">Log in to request or manage services.</p>
 

@@ -38,7 +38,7 @@ export default function ProfessionSearch({ onNeedsAuth }) {
       </div>
       <button
         type="submit"
-        className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition shrink-0"
+        className="bg-gold-500 hover:bg-gold-400 text-ink-900 text-sm font-semibold px-4 py-2.5 rounded-lg transition shrink-0"
       >
         Find
       </button>
