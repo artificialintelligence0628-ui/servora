@@ -1,7 +1,12 @@
 // db.js — thin wrapper around the pg Pool.
 // All raw SQL execution lives here. Domain logic lives in server/store/*.js.
 import pg from 'pg';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const { Pool } = pg;
 

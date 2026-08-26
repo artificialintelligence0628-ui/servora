@@ -3,7 +3,8 @@ import cors from 'cors';
 import path from 'node:path';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+
 // Patches Express so errors thrown inside async route handlers are caught and
 // turned into a normal JSON error response, instead of crashing the whole
 // server process (Express 4 doesn't catch async errors on its own).
@@ -22,6 +23,8 @@ import pushRoutes from './routes/push.routes.js';
 import { attachSocket } from './socket.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || true, credentials: true }));
