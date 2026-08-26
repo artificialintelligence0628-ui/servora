@@ -10,7 +10,7 @@
     "dev:client": "npm run dev --prefix client",
     "dev:all": "concurrently -n server,client -c blue,green \"npm run dev\" \"npm run dev:client\"",
     "start": "node server/index.js",
-    "build": "cd client && npm ci --legacy-peer-deps && npm run build",
+    "build": "cd client && rm -f package-lock.json && npm install --legacy-peer-deps && npm run build",
     "seed": "node seed.js",
     "db:push": "node run-schema.js",
     "db:migrate:documents": "node add-provider-documents.js",
@@ -20,7 +20,7 @@
     "db:migrate:references": "node add-provider-references.js",
     "db:migrate:push": "node add-push-subscriptions.js",
     "db:check": "node check-db.js",
-    "render-build": "npm ci --legacy-peer-deps && npm run build"
+    "render-build": "rm -f package-lock.json && npm install --legacy-peer-deps && npm run build"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
